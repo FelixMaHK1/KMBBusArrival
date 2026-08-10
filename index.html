@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>香港即時巴士到站查詢</title>
     
     <link rel="icon" type="image/png" href="cat.png">
@@ -61,6 +61,12 @@
             --eta-danger: #ef5350;
             --eta-critical: #ff5252;
             --eta-departed: #757575;
+        }
+
+        /* 鎖定水平捲動 */
+        html, body {
+            max-width: 100vw;
+            overflow-x: hidden;
         }
 
         * {
@@ -321,7 +327,6 @@
 <div class="container">
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('gps')">📍 附近</button>
-        <!-- 改回 18區，但內部保留港鐵站選項 -->
         <button class="tab-btn" onclick="switchTab('districts')">🗺️ 18區</button>
         <button class="tab-btn" onclick="switchTab('search')">🔍 路線</button>
         <button class="tab-btn" onclick="switchTab('bookmarks')">⭐ 收藏</button>
@@ -428,9 +433,10 @@
     <div id="bookmarks" class="panel">
         <div class="search-box">
             <input type="text" id="bookmark-filter" class="input-control" placeholder="過濾 (站名, 路線)" onkeyup="applyBookmarkFilter()">
+            <!-- 預設改為依距離排序 -->
             <select id="bookmark-sort" class="input-control" onchange="loadBookmarks()">
+                <option value="distance" selected>依距離</option>
                 <option value="name">依站名</option>
-                <option value="distance">依距離</option>
             </select>
         </div>
         <div id="bookmarks-status" class="status">載入中...</div>
