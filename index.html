@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="cat.png">
-    <!-- 蘋果 iOS 加至主畫面專用圖示 (解決您的問題) -->
-    <link rel="apple-touch-icon" href="cat.png">
-    <!-- Android 加至主畫面專用圖示 -->
-    <link rel="icon" sizes="192x192" href="cat.png">
     <title>香港即時巴士到站查詢</title>
+    
+    <link rel="icon" type="image/png" href="cat.png">
+    <link rel="apple-touch-icon" href="cat.png">
+    <link rel="icon" sizes="192x192" href="cat.png">
+
     <style>
-        /* 淺色模式 (預設) 變數 */
         :root {
             --primary: #d32f2f;
             --surface: #ffffff;
@@ -38,7 +37,6 @@
             --eta-departed: #9e9e9e;
         }
 
-        /* 深色模式變數 */
         body.dark-mode {
             --primary: #ef5350; 
             --surface: #1e1e1e;
@@ -77,7 +75,7 @@
             background-color: var(--background);
             color: var(--text-primary);
             line-height: 1.6;
-            padding: 20px;
+            padding: 16px;
         }
 
         header {
@@ -89,6 +87,7 @@
         h1 {
             color: var(--primary);
             margin-bottom: 8px;
+            font-size: 24px;
         }
 
         .header-actions {
@@ -126,21 +125,28 @@
 
         .tabs {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 4px; 
+            scrollbar-width: none; 
         }
+        .tabs::-webkit-scrollbar { display: none; }
 
         .tab-btn {
             flex: 1;
-            padding: 12px;
+            min-width: 75px;
+            padding: 10px 8px;
             border: none;
             background: var(--surface);
             color: var(--text-primary);
             border-radius: var(--radius);
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             box-shadow: var(--shadow);
+            white-space: nowrap;
+            text-align: center;
         }
 
         .tab-btn.active {
@@ -151,7 +157,7 @@
         .panel {
             display: none;
             background: var(--surface);
-            padding: 24px;
+            padding: 20px;
             border-radius: var(--radius);
             box-shadow: var(--shadow);
         }
@@ -163,46 +169,37 @@
         .search-box {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
         }
 
         .input-control {
-            padding: 12px 16px;
+            padding: 12px 14px;
             border: 1px solid var(--border);
             background: var(--background);
             color: var(--text-primary);
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 15px;
             flex: 1;
-            min-width: 150px;
+            min-width: 130px;
         }
 
-        input.input-control {
-            text-transform: uppercase;
-        }
-
-        select.input-control {
-            cursor: pointer;
-            flex: none;
-            width: auto;
-        }
+        input.input-control { text-transform: uppercase; }
+        select.input-control { cursor: pointer; flex: none; width: auto; }
 
         button.action-btn {
-            padding: 12px 24px;
+            padding: 12px 20px;
             background: var(--primary);
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             cursor: pointer;
             white-space: nowrap;
         }
 
-        button.action-btn:hover {
-            opacity: 0.9;
-        }
+        button.action-btn:hover { opacity: 0.9; }
 
         .status {
             color: var(--text-secondary);
@@ -213,15 +210,14 @@
         }
 
         .scrollable-area {
-            max-height: 65vh;
+            max-height: 60vh;
             overflow-y: auto;
-            padding-right: 8px;
+            padding-right: 4px;
         }
 
         .scrollable-area::-webkit-scrollbar { width: 6px; }
         .scrollable-area::-webkit-scrollbar-track { background: var(--background); border-radius: 4px; }
         .scrollable-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-        .scrollable-area::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
 
         .direction-group { margin-bottom: 24px; }
         
@@ -231,7 +227,7 @@
             padding: 12px 16px;
             border-radius: 8px;
             margin-bottom: 12px;
-            font-size: 16px;
+            font-size: 15px;
             position: sticky;
             top: 0; 
             z-index: 10;
@@ -243,14 +239,7 @@
             user-select: none;
         }
 
-        .direction-header:hover { opacity: 0.95; }
-
-        .toggle-icon {
-            display: inline-block;
-            transition: transform 0.3s ease;
-            font-size: 12px;
-        }
-        
+        .toggle-icon { display: inline-block; transition: transform 0.3s ease; font-size: 12px; }
         .direction-header.collapsed .toggle-icon { transform: rotate(-90deg); }
         .result-list { display: flex; flex-direction: column; gap: 12px; }
         .result-list.collapsed { display: none; }
@@ -258,7 +247,7 @@
         .card {
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 16px;
+            padding: 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -266,9 +255,9 @@
         }
 
         .route-info { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-        .route-number { font-size: 20px; font-weight: bold; color: var(--primary); }
-        .stop-name { font-size: 15px; font-weight: bold; color: var(--text-primary); }
-        .destination { font-size: 14px; font-weight: 500; }
+        .route-number { font-size: 18px; font-weight: bold; color: var(--primary); }
+        .stop-name { font-size: 14px; font-weight: bold; color: var(--text-primary); }
+        .destination { font-size: 13px; font-weight: 500; }
         
         .fav-btn {
             background: var(--fav-bg);
@@ -280,7 +269,6 @@
             color: var(--text-secondary);
             white-space: nowrap;
         }
-        .fav-btn:hover { background: var(--fav-hover-bg); }
         .fav-btn.active {
             color: var(--fav-active-text);
             border-color: var(--fav-active-border);
@@ -293,7 +281,7 @@
             flex-direction: column;
             align-items: flex-end;
             gap: 4px;
-            min-width: 120px;
+            min-width: 100px;
         }
 
         .eta-item {
@@ -306,29 +294,25 @@
             width: 100%;
         }
 
-        .eta-time-text { font-size: 15px; font-weight: bold; color: var(--eta-safe); transition: none; }
+        .eta-time-text { font-size: 14px; font-weight: bold; color: var(--eta-safe); transition: none; }
         .eta-time-text.warning { color: var(--eta-warning); }
         .eta-time-text.danger { color: var(--eta-danger); }
         .eta-time-text.critical { color: var(--eta-critical); animation: alert-flash 1s infinite; }
         .eta-time-text.departed { color: var(--eta-departed); font-weight: normal; }
 
-        @keyframes alert-flash {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
+        @keyframes alert-flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-        .eta-remark { font-size: 12px; color: var(--text-secondary); }
+        .eta-remark { font-size: 11px; color: var(--text-secondary); }
     </style>
 </head>
 <body>
 
 <header>
     <h1>香港巴士即時到站查詢</h1>
-    <p>提供九龍巴士 (KMB) 及龍運巴士 (LWB) 的實時數據</p>
     <div class="header-actions">
         <label class="action-pill">
             <input type="checkbox" id="auto-refresh-toggle" onchange="toggleAutoRefresh()" checked>
-            🔄 自動更新 (30秒)
+            🔄 自動更新
         </label>
         <button id="theme-toggle-btn" class="action-pill" onclick="toggleTheme()">🌙 暗黑模式</button>
     </div>
@@ -336,29 +320,71 @@
 
 <div class="container">
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('gps')">📍 附近站點</button>
-        <button class="tab-btn" onclick="switchTab('search')">🔍 路線搜尋</button>
-        <button class="tab-btn" onclick="switchTab('bookmarks')">⭐ 我的收藏</button>
+        <button class="tab-btn active" onclick="switchTab('gps')">📍 附近</button>
+        <button class="tab-btn" onclick="switchTab('districts')">🗺️ 18區</button>
+        <button class="tab-btn" onclick="switchTab('search')">🔍 路線</button>
+        <button class="tab-btn" onclick="switchTab('bookmarks')">⭐ 收藏</button>
     </div>
 
     <!-- GPS 附近巴士站 -->
     <div id="gps" class="panel active">
-        <div class="search-box" style="justify-content: center;">
+        <div class="search-box" style="justify-content: center; margin-bottom: 12px;">
             <select id="radius-select" class="input-control" onchange="updateGpsPrompt()">
-                <option value="0.3">距離: 300 米</option>
-                <option value="0.5" selected>距離: 500 米</option>
-                <option value="1.0">距離: 1000 米</option>
+                <option value="0.3">範圍: 300 米</option>
+                <option value="0.5" selected>範圍: 500 米</option>
+                <option value="1.0">範圍: 1000 米</option>
             </select>
-            <button class="action-btn" onclick="findNearbyStops()">定位並搜尋</button>
+            <button class="action-btn" onclick="findNearbyStops()">定位尋找</button>
         </div>
-        <div id="gps-status" class="status">請允許瀏覽器讀取您的位置以尋找附近 500 米的巴士站。</div>
+        
+        <!-- 新增功能：目的地即時過濾框 -->
+        <div class="search-box" style="margin-bottom: 16px;">
+             <input type="text" id="gps-filter" class="input-control" placeholder="🔍 篩選附近路線 (例如終點站: 尖沙咀, 沙田)" onkeyup="applyGpsFilter()">
+        </div>
+
+        <div id="gps-status" class="status">請允許瀏覽器讀取您的位置以尋找附近的巴士站。</div>
         <div id="gps-results" class="scrollable-area"></div>
+    </div>
+
+    <!-- 18區探索 -->
+    <div id="districts" class="panel">
+        <div class="search-box">
+            <select id="district-select" class="input-control" style="flex: 1;">
+                <optgroup label="香港島">
+                    <option value="CW">中西區</option>
+                    <option value="WC">灣仔</option>
+                    <option value="EA">東區</option>
+                    <option value="SO">南區</option>
+                </optgroup>
+                <optgroup label="九龍">
+                    <option value="YTM" selected>油尖旺</option>
+                    <option value="SSP">深水埗</option>
+                    <option value="KC">九龍城</option>
+                    <option value="WTS">黃大仙</option>
+                    <option value="KT">觀塘</option>
+                </optgroup>
+                <optgroup label="新界">
+                    <option value="KWT">葵青</option>
+                    <option value="TW">荃灣</option>
+                    <option value="TM">屯門</option>
+                    <option value="YL">元朗</option>
+                    <option value="NO">北區</option>
+                    <option value="TP">大埔</option>
+                    <option value="ST">沙田</option>
+                    <option value="SK">西貢</option>
+                    <option value="IS">離島</option>
+                </optgroup>
+            </select>
+            <button class="action-btn" onclick="searchByDistrict()">探索該區</button>
+        </div>
+        <div id="districts-status" class="status">選擇地區，瀏覽該區市中心周邊的巴士站。</div>
+        <div id="districts-results" class="scrollable-area"></div>
     </div>
 
     <!-- 路線搜尋 -->
     <div id="search" class="panel">
         <div class="search-box">
-            <input type="text" id="route-input" class="input-control" placeholder="輸入巴士路線 (如: 1A, 215X)">
+            <input type="text" id="route-input" class="input-control" placeholder="輸入路線 (如: 1A)">
             <button class="action-btn" onclick="searchRoute()">搜尋</button>
         </div>
         <div id="search-status" class="status"></div>
@@ -368,10 +394,10 @@
     <!-- 收藏站點 -->
     <div id="bookmarks" class="panel">
         <div class="search-box">
-            <input type="text" id="bookmark-filter" class="input-control" placeholder="過濾收藏 (如: 站名, 路線號碼)" onkeyup="applyBookmarkFilter()">
+            <input type="text" id="bookmark-filter" class="input-control" placeholder="過濾 (站名, 路線)" onkeyup="applyBookmarkFilter()">
             <select id="bookmark-sort" class="input-control" onchange="loadBookmarks()">
-                <option value="name">排序: 依站名</option>
-                <option value="distance">排序: 依距離 (由近到遠)</option>
+                <option value="name">依站名</option>
+                <option value="distance">依距離</option>
             </select>
         </div>
         <div id="bookmarks-status" class="status">載入中...</div>
@@ -382,6 +408,27 @@
 <script>
     const KMB_BASE_URL = 'https://data.etabus.gov.hk/v1/transport/kmb';
     
+    const DISTRICTS_COORDS = {
+        "CW": { name: "中西區", lat: 22.2819, lon: 114.1581 },
+        "WC": { name: "灣仔", lat: 22.2760, lon: 114.1751 },
+        "EA": { name: "東區", lat: 22.2821, lon: 114.2166 },
+        "SO": { name: "南區", lat: 22.2472, lon: 114.1588 },
+        "YTM": { name: "油尖旺", lat: 22.3116, lon: 114.1706 },
+        "SSP": { name: "深水埗", lat: 22.3307, lon: 114.1622 },
+        "KC": { name: "九龍城", lat: 22.3282, lon: 114.1916 },
+        "WTS": { name: "黃大仙", lat: 22.3429, lon: 114.1930 },
+        "KT": { name: "觀塘", lat: 22.3132, lon: 114.2258 },
+        "KWT": { name: "葵青", lat: 22.3549, lon: 114.1261 },
+        "TW": { name: "荃灣", lat: 22.3713, lon: 114.1136 },
+        "TM": { name: "屯門", lat: 22.3908, lon: 113.9725 },
+        "YL": { name: "元朗", lat: 22.4445, lon: 114.0222 },
+        "NO": { name: "北區", lat: 22.4947, lon: 114.1381 },
+        "TP": { name: "大埔", lat: 22.4423, lon: 114.1655 },
+        "ST": { name: "沙田", lat: 22.3771, lon: 114.1872 },
+        "SK": { name: "西貢", lat: 22.3838, lon: 114.2710 },
+        "IS": { name: "離島", lat: 22.2611, lon: 113.9460 }
+    };
+
     let globalStopsMap = new Map();
     let isStopsLoaded = false;
     let isLoadingStops = false;
@@ -389,8 +436,8 @@
     let autoRefreshTimer = null;
     let currentTabId = 'gps';
     let lastGpsCoords = null; 
+    let lastDistrictCode = null;
 
-    /* ==== UI 與基礎功能 ==== */
     function updateGpsPrompt() {
         const radius = document.getElementById('radius-select').value;
         const radiusMeters = Math.round(parseFloat(radius) * 1000);
@@ -405,7 +452,7 @@
 
     function updateThemeBtnState(isDark) {
         const btn = document.getElementById('theme-toggle-btn');
-        if (btn) btn.innerText = isDark ? '☀️ 明亮模式' : '🌙 暗黑模式';
+        if (btn) btn.innerText = isDark ? '☀️ 明亮' : '🌙 暗黑';
     }
 
     function switchTab(tabId) {
@@ -465,7 +512,6 @@
         return '';                             
     }
 
-    /* ==== 收藏與過濾功能 ==== */
     function getBookmarks() {
         return JSON.parse(localStorage.getItem('kmb_bookmarks_v3') || '{}');
     }
@@ -477,12 +523,8 @@
     function toggleBookmark(event, name, idsJson) {
         if(event) event.stopPropagation();
         let bms = getBookmarks();
-        
-        if (bms[name]) {
-            delete bms[name];
-        } else {
-            bms[name] = JSON.parse(idsJson); 
-        }
+        if (bms[name]) delete bms[name];
+        else bms[name] = JSON.parse(idsJson); 
         saveBookmarks(bms);
 
         const isFav = !!bms[name];
@@ -502,43 +544,56 @@
         return `<button class="fav-btn ${isFav ? 'active' : ''}" data-fav-name="${name}" onclick="toggleBookmark(event, '${safeName}', '${idsJson}')">${isFav ? '⭐ 已收藏' : '☆ 收藏'}</button>`;
     }
 
-    // 收藏頁籤過濾功能 (即時觸發)
     function applyBookmarkFilter() {
         const filterText = document.getElementById('bookmark-filter').value.trim().toUpperCase();
         const items = document.querySelectorAll('#bookmarks-results .bookmark-item');
-        
         items.forEach(item => {
             const name = item.getAttribute('data-name').toUpperCase();
             const routes = item.getAttribute('data-routes').toUpperCase();
+            item.style.display = (name.includes(filterText) || routes.includes(filterText)) ? '' : 'none';
+        });
+    }
+
+    /* ==== 新增：附近路線的即時過濾功能 ==== */
+    function applyGpsFilter() {
+        const filterText = document.getElementById('gps-filter').value.trim().toUpperCase();
+        const groups = document.querySelectorAll('#gps-results .direction-group');
+        
+        groups.forEach(group => {
+            let hasVisibleCard = false;
+            const cards = group.querySelectorAll('.card');
             
-            // 如果搜尋條件吻合站名或路線號碼，則顯示；否則隱藏
-            if (name.includes(filterText) || routes.includes(filterText)) {
-                item.style.display = '';
-            } else {
-                item.style.display = 'none';
-            }
+            cards.forEach(card => {
+                // 抓取路線號碼與目的地文字來做比對
+                const destText = card.querySelector('.destination').innerText.toUpperCase();
+                const routeText = card.querySelector('.route-number').innerText.toUpperCase();
+                
+                if (destText.includes(filterText) || routeText.includes(filterText)) {
+                    card.style.display = '';
+                    hasVisibleCard = true;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // 如果這個車站下沒有任何符合的路線，就隱藏整個車站
+            group.style.display = hasVisibleCard ? '' : 'none';
         });
     }
     
-    /* ==== 自動更新 ==== */
     function toggleAutoRefresh() {
         const isChecked = document.getElementById('auto-refresh-toggle').checked;
-        if (isChecked) {
-            autoRefreshTimer = setInterval(doSilentRefresh, 30000); 
-        } else {
-            clearInterval(autoRefreshTimer);
-        }
+        if (isChecked) autoRefreshTimer = setInterval(doSilentRefresh, 30000); 
+        else clearInterval(autoRefreshTimer);
     }
 
     function doSilentRefresh() {
-        if (currentTabId === 'gps' && lastGpsCoords) fetchAndRenderGPS(true);
-        else if (currentTabId === 'search') {
-            if (document.getElementById('route-input').value.trim()) searchRoute(true);
-        } 
+        if (currentTabId === 'gps' && lastGpsCoords) fetchAndRenderStops(lastGpsCoords.lat, lastGpsCoords.lon, 'gps-status', 'gps-results', parseFloat(document.getElementById('radius-select').value), 'gps', true);
+        else if (currentTabId === 'districts' && lastDistrictCode) searchByDistrict(true);
+        else if (currentTabId === 'search' && document.getElementById('route-input').value.trim()) searchRoute(true);
         else if (currentTabId === 'bookmarks') loadBookmarks(true);
     }
 
-    /* ==== 核心數據載入 ==== */
     async function ensureStopsLoaded(statusEl, isSilent = false) {
         if (isStopsLoaded) return true;
         if (isLoadingStops) {
@@ -566,49 +621,26 @@
         }
     }
 
-    async function findNearbyStops() {
-        const statusEl = document.getElementById('gps-status');
-        if (!navigator.geolocation) {
-            statusEl.innerText = "您的瀏覽器不支援地理位置功能。";
-            return;
-        }
-        
-        const radius = document.getElementById('radius-select').value;
-        const radiusMeters = Math.round(parseFloat(radius) * 1000);
-        statusEl.innerText = `正在定位您的位置 (搜尋範圍: ${radiusMeters}米)...`;
-        
-        navigator.geolocation.getCurrentPosition(async (position) => {
-            lastGpsCoords = { lat: position.coords.latitude, lon: position.coords.longitude };
-            await fetchAndRenderGPS(false);
-        }, (error) => {
-            statusEl.innerText = "無法獲取位置，請確認是否已授予位置權限。";
-        });
-    }
-
-    async function fetchAndRenderGPS(isSilent = false) {
-        if (!lastGpsCoords) return;
-        const statusEl = document.getElementById('gps-status');
-        const resultsEl = document.getElementById('gps-results');
-        
-        const radiusKm = parseFloat(document.getElementById('radius-select').value);
-        const radiusMeters = Math.round(radiusKm * 1000);
+    async function fetchAndRenderStops(lat, lon, statusId, resultsId, radiusKm, prefix, isSilent = false, limitGroups = 0) {
+        const statusEl = document.getElementById(statusId);
+        const resultsEl = document.getElementById(resultsId);
 
         const loaded = await ensureStopsLoaded(statusEl, isSilent);
         if (!loaded) return;
 
         if (!isSilent) {
-            statusEl.innerText = `定位成功！正在比對 ${radiusMeters} 米內的巴士站資料...`;
+            statusEl.innerText = `正在比對周邊巴士站資料...`;
             resultsEl.innerHTML = "";
         }
 
-        const expandedStates = isSilent ? getExpandedStates('gps-results') : [];
+        const expandedStates = isSilent ? getExpandedStates(resultsId) : [];
 
         const nearbyPoles = Array.from(globalStopsMap.values())
-            .map(stop => ({ ...stop, dist: getDistance(lastGpsCoords.lat, lastGpsCoords.lon, parseFloat(stop.lat), parseFloat(stop.long)) }))
+            .map(stop => ({ ...stop, dist: getDistance(lat, lon, parseFloat(stop.lat), parseFloat(stop.long)) }))
             .filter(stop => stop.dist <= radiusKm);
 
         if (nearbyPoles.length === 0) {
-            statusEl.innerText = `您附近 ${radiusMeters} 米內沒有九巴/龍運巴士站。`;
+            statusEl.innerText = `該區域 ${Math.round(radiusKm * 1000)} 米內沒有九巴/龍運巴士站。`;
             return;
         }
 
@@ -619,7 +651,11 @@
             if (pole.dist < groupedByName[pole.name].minDist) groupedByName[pole.name].minDist = pole.dist;
         });
 
-        const sortedGroups = Object.values(groupedByName).sort((a, b) => a.minDist - b.minDist);
+        let sortedGroups = Object.values(groupedByName).sort((a, b) => a.minDist - b.minDist);
+        if (limitGroups > 0 && sortedGroups.length > limitGroups) {
+            sortedGroups = sortedGroups.slice(0, limitGroups);
+        }
+
         if (!isSilent) statusEl.innerText = `找到 ${sortedGroups.length} 個巴士站區域，正在載入實時到站時間...`;
         
         let htmlOutput = '';
@@ -652,7 +688,7 @@
             });
 
             const sortedRouteGroups = Object.values(routeGroups).sort((a, b) => a.route.localeCompare(b.route, undefined, {numeric: true}));
-            const groupId = `gps_${group.name}`;
+            const groupId = `${prefix}_${group.name}`;
 
             htmlOutput += `
                 <div class="direction-group">
@@ -662,7 +698,7 @@
                             <span>🚏 ${group.name}</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 13px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 8px; border-radius: 12px;">約 ${Math.round(group.minDist * 1000)} 米</span>
+                            <span style="font-size: 12px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 6px; border-radius: 12px;">約 ${Math.round(group.minDist * 1000)} 米</span>
                             <div onclick="event.stopPropagation()">${getStarHTML(group.name, group.poles.map(p=>p.id))}</div>
                         </div>
                     </h3>
@@ -689,12 +725,46 @@
         }
 
         if (htmlOutput === '') {
-            statusEl.innerText = `附近巴士站暫時沒有即時到站資料。`;
+            statusEl.innerText = "該區域暫時沒有即時到站資料。";
         } else {
             statusEl.innerText = `更新於 ${new Date().toLocaleTimeString()} 🔽`;
             resultsEl.innerHTML = htmlOutput;
-            if (isSilent) restoreExpandedStates('gps-results', expandedStates);
+            if (isSilent) restoreExpandedStates(resultsId, expandedStates);
+            
+            // 每次渲染完畢後，確保目前的篩選條件仍有效
+            if (prefix === 'gps') applyGpsFilter();
         }
+    }
+
+    async function findNearbyStops() {
+        const statusEl = document.getElementById('gps-status');
+        if (!navigator.geolocation) {
+            statusEl.innerText = "您的瀏覽器不支援地理位置功能。";
+            return;
+        }
+        
+        const radius = document.getElementById('radius-select').value;
+        statusEl.innerText = `正在定位您的位置...`;
+        
+        navigator.geolocation.getCurrentPosition(async (position) => {
+            lastGpsCoords = { lat: position.coords.latitude, lon: position.coords.longitude };
+            await fetchAndRenderStops(lastGpsCoords.lat, lastGpsCoords.lon, 'gps-status', 'gps-results', parseFloat(radius), 'gps', false);
+        }, (error) => {
+            statusEl.innerText = "無法獲取位置，請確認是否已授予位置權限。";
+        });
+    }
+
+    async function searchByDistrict(isSilent = false) {
+        const selectEl = document.getElementById('district-select');
+        lastDistrictCode = selectEl.value;
+        const distInfo = DISTRICTS_COORDS[lastDistrictCode];
+        
+        if (!distInfo) return;
+
+        const statusEl = document.getElementById('districts-status');
+        if (!isSilent) statusEl.innerText = `正在載入 ${distInfo.name} 周邊的巴士站...`;
+
+        await fetchAndRenderStops(distInfo.lat, distInfo.lon, 'districts-status', 'districts-results', 1.5, 'dist', isSilent, 15);
     }
 
     async function searchRoute(isSilent = false) {
@@ -843,7 +913,6 @@
             return;
         }
 
-        // 處理「依距離排序」：如果尚未有 GPS 定位，則請求定位
         if (sortMode === 'distance' && !lastGpsCoords) {
             if (!navigator.geolocation) {
                 alert("您的瀏覽器不支援地理位置功能，將切換回依站名排序。");
@@ -853,7 +922,7 @@
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         lastGpsCoords = { lat: position.coords.latitude, lon: position.coords.longitude };
-                        loadBookmarks(); // 獲取後重新呼叫
+                        loadBookmarks(); 
                     }, 
                     (error) => {
                         alert("無法獲取位置，將切換回依站名排序。");
@@ -876,7 +945,6 @@
         const expandedStates = isSilent ? getExpandedStates('bookmarks-results') : [];
         let htmlOutput = '';
 
-        // 1. 組織收藏清單與計算距離
         let bookmarkItems = keys.map(name => {
             const ids = bms[name];
             let minDist = Infinity;
@@ -892,15 +960,12 @@
             return { name, ids, minDist };
         });
 
-        // 2. 進行排序
         if (sortMode === 'distance' && lastGpsCoords) {
             bookmarkItems.sort((a, b) => a.minDist - b.minDist);
         } else {
-            // 預設依站名筆畫排序
             bookmarkItems.sort((a, b) => a.name.localeCompare(b.name, 'zh-HK'));
         }
 
-        // 3. 抓取資料並渲染
         for (const bm of bookmarkItems) {
             let validEtas = [];
             
@@ -929,13 +994,11 @@
 
             const sortedRouteGroups = Object.values(routeGroups).sort((a,b) => a.route.localeCompare(b.route, undefined, {numeric: true}));
             
-            // 準備距離標籤
             let distBadge = '';
             if (sortMode === 'distance' && bm.minDist !== Infinity) {
-                distBadge = `<span style="font-size: 13px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 8px; border-radius: 12px; margin-right: 8px;">約 ${Math.round(bm.minDist * 1000)} 米</span>`;
+                distBadge = `<span style="font-size: 12px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 6px; border-radius: 12px; margin-right: 8px;">約 ${Math.round(bm.minDist * 1000)} 米</span>`;
             }
 
-            // 準備用於過濾的 routes 字串
             const routeListStr = sortedRouteGroups.map(rg => rg.route).join(',');
 
             htmlOutput += `
@@ -986,7 +1049,6 @@
             }
         }
 
-        // 重新執行一次過濾（確保排序後、背景更新後，目前的搜尋過濾依然生效）
         applyBookmarkFilter();
     }
 
