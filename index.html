@@ -309,6 +309,16 @@
         @keyframes alert-flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         .eta-remark { font-size: 11px; color: var(--text-secondary); }
+
+        /* 頁尾樣式 */
+        footer {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
@@ -433,7 +443,6 @@
     <div id="bookmarks" class="panel">
         <div class="search-box">
             <input type="text" id="bookmark-filter" class="input-control" placeholder="過濾 (站名, 路線)" onkeyup="applyBookmarkFilter()">
-            <!-- 預設改為依距離排序 -->
             <select id="bookmark-sort" class="input-control" onchange="loadBookmarks()">
                 <option value="distance" selected>依距離</option>
                 <option value="name">依站名</option>
@@ -442,6 +451,11 @@
         <div id="bookmarks-status" class="status">載入中...</div>
         <div id="bookmarks-results" class="scrollable-area"></div>
     </div>
+
+    <!-- 頁尾 -->
+    <footer>
+        Developed by Felix Ma | ver 1.0.0
+    </footer>
 </div>
 
 <script>
