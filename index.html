@@ -347,7 +347,7 @@
         <div class="search-box" style="justify-content: center; margin-bottom: 12px;">
             <select id="radius-select" class="input-control" onchange="updateGpsPrompt()">
                 <option value="0.3" selected>範圍: 300 米</option>
-                <option value="0.5">範圍: 500 米</option>
+                <option value="0.5">範圍: 500 m</option>
                 <option value="1.0">範圍: 1 km</option>
             </select>
             <button class="action-btn" onclick="findNearbyStops()">重新定位</button>
@@ -518,7 +518,7 @@
         if (distInKm >= 1) {
             return parseFloat(distInKm.toFixed(2)) + ' km';
         } else {
-            return Math.round(distInKm * 1000) + ' 米';
+            return Math.round(distInKm * 1000) + ' m';
         }
     }
 
