@@ -169,15 +169,18 @@
             color: var(--text-primary);
             border-radius: 8px;
             font-size: 16px;
+            flex: 1;
+            min-width: 150px;
         }
 
         input.input-control {
-            flex: 1;
             text-transform: uppercase;
         }
 
         select.input-control {
             cursor: pointer;
+            flex: none;
+            width: auto;
         }
 
         button.action-btn {
@@ -189,6 +192,7 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
+            white-space: nowrap;
         }
 
         button.action-btn:hover {
@@ -358,6 +362,13 @@
 
     <!-- 收藏站點 -->
     <div id="bookmarks" class="panel">
+        <div class="search-box">
+            <input type="text" id="bookmark-filter" class="input-control" placeholder="過濾收藏 (如: 站名, 路線號碼)" onkeyup="applyBookmarkFilter()">
+            <select id="bookmark-sort" class="input-control" onchange="loadBookmarks()">
+                <option value="name">排序: 依站名</option>
+                <option value="distance">排序: 依距離 (由近到遠)</option>
+            </select>
+        </div>
         <div id="bookmarks-status" class="status">載入中...</div>
         <div id="bookmarks-results" class="scrollable-area"></div>
     </div>
@@ -374,6 +385,7 @@
     let currentTabId = 'gps';
     let lastGpsCoords = null; 
 
+    /* ==== UI 與基礎功能 ==== */
     function updateGpsPrompt() {
         const radius = document.getElementById('radius-select').value;
         const radiusMeters = Math.round(parseFloat(radius) * 1000);
@@ -448,6 +460,7 @@
         return '';                             
     }
 
+    /* ==== 收藏與過濾功能 ==== */
     function getBookmarks() {
         return JSON.parse(localStorage.getItem('kmb_bookmarks_v3') || '{}');
     }
@@ -483,7 +496,26 @@
         const idsJson = JSON.stringify(idsArray).replace(/"/g, '&quot;');
         return `<button class="fav-btn ${isFav ? 'active' : ''}" data-fav-name="${name}" onclick="toggleBookmark(event, '${safeName}', '${idsJson}')">${isFav ? '⭐ 已收藏' : '☆ 收藏'}</button>`;
     }
+
+    // 收藏頁籤過濾功能 (即時觸發)
+    function applyBookmarkFilter() {
+        const filterText = document.getElementById('bookmark-filter').value.trim().toUpperCase();
+        const items = document.querySelectorAll('#bookmarks-results .bookmark-item');
+        
+        items.forEach(item => {
+            const name = item.getAttribute('data-name').toUpperCase();
+            const routes = item.getAttribute('data-routes').toUpperCase();
+            
+            // 如果搜尋條件吻合站名或路線號碼，則顯示；否則隱藏
+            if (name.includes(filterText) || routes.includes(filterText)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
     
+    /* ==== 自動更新 ==== */
     function toggleAutoRefresh() {
         const isChecked = document.getElementById('auto-refresh-toggle').checked;
         if (isChecked) {
@@ -501,6 +533,7 @@
         else if (currentTabId === 'bookmarks') loadBookmarks(true);
     }
 
+    /* ==== 核心數據載入 ==== */
     async function ensureStopsLoaded(statusEl, isSilent = false) {
         if (isStopsLoaded) return true;
         if (isLoadingStops) {
@@ -793,6 +826,7 @@
     }
 
     async function loadBookmarks(isSilent = false) {
+        const sortMode = document.getElementById('bookmark-sort').value;
         const bms = getBookmarks();
         const statusEl = document.getElementById('bookmarks-status');
         const resultsEl = document.getElementById('bookmarks-results');
@@ -802,6 +836,28 @@
             statusEl.innerText = "您尚未收藏任何巴士站。您可以透過「搜尋」或「附近」將常用站點加入收藏。";
             resultsEl.innerHTML = "";
             return;
+        }
+
+        // 處理「依距離排序」：如果尚未有 GPS 定位，則請求定位
+        if (sortMode === 'distance' && !lastGpsCoords) {
+            if (!navigator.geolocation) {
+                alert("您的瀏覽器不支援地理位置功能，將切換回依站名排序。");
+                document.getElementById('bookmark-sort').value = 'name';
+            } else {
+                statusEl.innerText = "正在獲取位置以計算距離...";
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        lastGpsCoords = { lat: position.coords.latitude, lon: position.coords.longitude };
+                        loadBookmarks(); // 獲取後重新呼叫
+                    }, 
+                    (error) => {
+                        alert("無法獲取位置，將切換回依站名排序。");
+                        document.getElementById('bookmark-sort').value = 'name';
+                        loadBookmarks();
+                    }
+                );
+                return; 
+            }
         }
 
         const loaded = await ensureStopsLoaded(statusEl, isSilent);
@@ -815,11 +871,35 @@
         const expandedStates = isSilent ? getExpandedStates('bookmarks-results') : [];
         let htmlOutput = '';
 
-        for (const name of keys) {
+        // 1. 組織收藏清單與計算距離
+        let bookmarkItems = keys.map(name => {
             const ids = bms[name];
+            let minDist = Infinity;
+            if (lastGpsCoords && sortMode === 'distance') {
+                ids.forEach(id => {
+                    const stopData = globalStopsMap.get(id);
+                    if (stopData) {
+                        const dist = getDistance(lastGpsCoords.lat, lastGpsCoords.lon, parseFloat(stopData.lat), parseFloat(stopData.long));
+                        if (dist < minDist) minDist = dist;
+                    }
+                });
+            }
+            return { name, ids, minDist };
+        });
+
+        // 2. 進行排序
+        if (sortMode === 'distance' && lastGpsCoords) {
+            bookmarkItems.sort((a, b) => a.minDist - b.minDist);
+        } else {
+            // 預設依站名筆畫排序
+            bookmarkItems.sort((a, b) => a.name.localeCompare(b.name, 'zh-HK'));
+        }
+
+        // 3. 抓取資料並渲染
+        for (const bm of bookmarkItems) {
             let validEtas = [];
             
-            const fetchPromises = ids.map(async (id) => {
+            const fetchPromises = bm.ids.map(async (id) => {
                 try {
                     const res = await fetch(`${KMB_BASE_URL}/stop-eta/${id}`);
                     const json = await res.json();
@@ -843,15 +923,27 @@
             });
 
             const sortedRouteGroups = Object.values(routeGroups).sort((a,b) => a.route.localeCompare(b.route, undefined, {numeric: true}));
+            
+            // 準備距離標籤
+            let distBadge = '';
+            if (sortMode === 'distance' && bm.minDist !== Infinity) {
+                distBadge = `<span style="font-size: 13px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 8px; border-radius: 12px; margin-right: 8px;">約 ${Math.round(bm.minDist * 1000)} 米</span>`;
+            }
+
+            // 準備用於過濾的 routes 字串
+            const routeListStr = sortedRouteGroups.map(rg => rg.route).join(',');
 
             htmlOutput += `
-                <div class="direction-group">
-                    <h3 class="direction-header ${isSilent ? 'collapsed' : ''}" data-group-id="bm_${name}" onclick="toggleCollapse(this)">
+                <div class="direction-group bookmark-item" data-name="${bm.name}" data-routes="${routeListStr}">
+                    <h3 class="direction-header ${isSilent ? 'collapsed' : ''}" data-group-id="bm_${bm.name}" onclick="toggleCollapse(this)">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span class="toggle-icon">▼</span>
-                            <span>🚏 ${name}</span>
+                            <span>🚏 ${bm.name}</span>
                         </div>
-                        <div onclick="event.stopPropagation()">${getStarHTML(name, ids)}</div>
+                        <div style="display: flex; align-items: center;">
+                            ${distBadge}
+                            <div onclick="event.stopPropagation()">${getStarHTML(bm.name, bm.ids)}</div>
+                        </div>
                     </h3>
                     <div class="result-list ${isSilent ? 'collapsed' : ''}">
             `;
@@ -888,6 +980,9 @@
                 restoreExpandedStates('bookmarks-results', keys.map(k => `bm_${k}`));
             }
         }
+
+        // 重新執行一次過濾（確保排序後、背景更新後，目前的搜尋過濾依然生效）
+        applyBookmarkFilter();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -897,7 +992,7 @@
             updateThemeBtnState(true);
         }
         toggleAutoRefresh();
-        updateGpsPrompt(); // 初始化提示文字
+        updateGpsPrompt(); 
     });
 </script>
 
