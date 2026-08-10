@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>香港即時巴士到站查詢</title>
     <style>
+        /* 淺色模式 (預設) 變數 */
         :root {
             --primary: #d32f2f;
             --surface: #ffffff;
@@ -14,6 +15,49 @@
             --border: #e0e0e0;
             --radius: 12px;
             --shadow: 0 4px 12px rgba(0,0,0,0.08);
+            
+            --card-bg: #fafafa;
+            --eta-bg: #f0f2f5;
+            --dist-badge-bg: rgba(0,0,0,0.15);
+            
+            --fav-bg: rgba(255,255,255,0.9);
+            --fav-hover-bg: #fff;
+            --fav-active-bg: #fef9e7;
+            --fav-active-border: #f39c12;
+            --fav-active-text: #d35400;
+
+            --eta-safe: #2e7d32;
+            --eta-warning: #d35400;
+            --eta-danger: #c0392b;
+            --eta-critical: #e74c3c;
+            --eta-departed: #9e9e9e;
+        }
+
+        /* 深色模式變數 */
+        body.dark-mode {
+            --primary: #ef5350; 
+            --surface: #1e1e1e;
+            --background: #121212;
+            --text-primary: #e0e0e0;
+            --text-secondary: #aaaaaa;
+            --border: #333333;
+            --shadow: 0 4px 12px rgba(0,0,0,0.3);
+            
+            --card-bg: #242424;
+            --eta-bg: #2c2c2c;
+            --dist-badge-bg: rgba(255,255,255,0.15);
+            
+            --fav-bg: #2c2c2c;
+            --fav-hover-bg: #3a3a3a;
+            --fav-active-bg: #3e2723;
+            --fav-active-border: #ff9800;
+            --fav-active-text: #ffb74d;
+
+            --eta-safe: #66bb6a;
+            --eta-warning: #ffa726;
+            --eta-danger: #ef5350;
+            --eta-critical: #ff5252;
+            --eta-departed: #757575;
         }
 
         * {
@@ -21,6 +65,7 @@
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; 
         }
 
         body {
@@ -45,10 +90,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 12px;
             margin-bottom: 16px;
+            flex-wrap: wrap;
         }
 
-        .auto-refresh-label {
+        .action-pill {
             font-size: 14px;
             display: flex;
             align-items: center;
@@ -63,8 +110,8 @@
             user-select: none;
         }
 
-        .auto-refresh-label:hover {
-            background: #f9f9f9;
+        .action-pill:hover {
+            background: var(--card-bg);
         }
 
         .container {
@@ -89,7 +136,6 @@
             font-weight: bold;
             cursor: pointer;
             box-shadow: var(--shadow);
-            transition: all 0.2s;
         }
 
         .tab-btn.active {
@@ -113,15 +159,25 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
-        input {
-            flex: 1;
+        .input-control {
             padding: 12px 16px;
             border: 1px solid var(--border);
+            background: var(--background);
+            color: var(--text-primary);
             border-radius: 8px;
             font-size: 16px;
+        }
+
+        input.input-control {
+            flex: 1;
             text-transform: uppercase;
+        }
+
+        select.input-control {
+            cursor: pointer;
         }
 
         button.action-btn {
@@ -133,7 +189,6 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: opacity 0.2s;
         }
 
         button.action-btn:hover {
@@ -155,9 +210,9 @@
         }
 
         .scrollable-area::-webkit-scrollbar { width: 6px; }
-        .scrollable-area::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
-        .scrollable-area::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
-        .scrollable-area::-webkit-scrollbar-thumb:hover { background: #999; }
+        .scrollable-area::-webkit-scrollbar-track { background: var(--background); border-radius: 4px; }
+        .scrollable-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .scrollable-area::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
 
         .direction-group { margin-bottom: 24px; }
         
@@ -198,7 +253,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #fafafa;
+            background: var(--card-bg);
         }
 
         .route-info { display: flex; flex-direction: column; gap: 4px; flex: 1; }
@@ -206,29 +261,21 @@
         .stop-name { font-size: 15px; font-weight: bold; color: var(--text-primary); }
         .destination { font-size: 14px; font-weight: 500; }
         
-        .stop-id-remark { 
-            margin-top: 4px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* 收藏按鈕樣式 */
         .fav-btn {
-            background: transparent;
-            border: 1px solid #ccc;
+            background: var(--fav-bg);
+            border: 1px solid var(--border);
             border-radius: 4px;
-            padding: 3px 8px;
+            padding: 4px 8px;
             cursor: pointer;
             font-size: 12px;
             color: var(--text-secondary);
-            transition: all 0.2s;
+            white-space: nowrap;
         }
-        .fav-btn:hover { background: #f0f0f0; }
+        .fav-btn:hover { background: var(--fav-hover-bg); }
         .fav-btn.active {
-            color: #d35400;
-            border-color: #f39c12;
-            background: #fef9e7;
+            color: var(--fav-active-text);
+            border-color: var(--fav-active-border);
+            background: var(--fav-active-bg);
             font-weight: bold;
         }
 
@@ -244,13 +291,23 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            background: #e8f5e9;
+            background: var(--eta-bg);
             padding: 4px 8px;
             border-radius: 4px;
             width: 100%;
         }
 
-        .eta-time-text { font-size: 15px; font-weight: bold; color: #2e7d32; }
+        .eta-time-text { font-size: 15px; font-weight: bold; color: var(--eta-safe); transition: none; }
+        .eta-time-text.warning { color: var(--eta-warning); }
+        .eta-time-text.danger { color: var(--eta-danger); }
+        .eta-time-text.critical { color: var(--eta-critical); animation: alert-flash 1s infinite; }
+        .eta-time-text.departed { color: var(--eta-departed); font-weight: normal; }
+
+        @keyframes alert-flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
         .eta-remark { font-size: 12px; color: var(--text-secondary); }
     </style>
 </head>
@@ -260,11 +317,11 @@
     <h1>香港巴士即時到站查詢</h1>
     <p>提供九龍巴士 (KMB) 及龍運巴士 (LWB) 的實時數據</p>
     <div class="header-actions">
-        <label class="auto-refresh-label">
-            <!-- 預設加入 checked 屬性 -->
+        <label class="action-pill">
             <input type="checkbox" id="auto-refresh-toggle" onchange="toggleAutoRefresh()" checked>
             🔄 自動更新 (30秒)
         </label>
+        <button id="theme-toggle-btn" class="action-pill" onclick="toggleTheme()">🌙 暗黑模式</button>
     </div>
 </header>
 
@@ -277,8 +334,13 @@
 
     <!-- GPS 附近巴士站 -->
     <div id="gps" class="panel active">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <button class="action-btn" onclick="findNearbyStops()">獲取我的位置並搜尋</button>
+        <div class="search-box" style="justify-content: center;">
+            <select id="radius-select" class="input-control" onchange="updateGpsPrompt()">
+                <option value="0.3">距離: 300 米</option>
+                <option value="0.5" selected>距離: 500 米</option>
+                <option value="1.0">距離: 1000 米</option>
+            </select>
+            <button class="action-btn" onclick="findNearbyStops()">定位並搜尋</button>
         </div>
         <div id="gps-status" class="status">請允許瀏覽器讀取您的位置以尋找附近 500 米的巴士站。</div>
         <div id="gps-results" class="scrollable-area"></div>
@@ -287,7 +349,7 @@
     <!-- 路線搜尋 -->
     <div id="search" class="panel">
         <div class="search-box">
-            <input type="text" id="route-input" placeholder="輸入巴士路線 (如: 1A, 215X)">
+            <input type="text" id="route-input" class="input-control" placeholder="輸入巴士路線 (如: 1A, 215X)">
             <button class="action-btn" onclick="searchRoute()">搜尋</button>
         </div>
         <div id="search-status" class="status"></div>
@@ -312,6 +374,23 @@
     let currentTabId = 'gps';
     let lastGpsCoords = null; 
 
+    function updateGpsPrompt() {
+        const radius = document.getElementById('radius-select').value;
+        const radiusMeters = Math.round(parseFloat(radius) * 1000);
+        document.getElementById('gps-status').innerText = `準備就緒。點擊上方按鈕尋找附近 ${radiusMeters} 米的巴士站。`;
+    }
+
+    function toggleTheme() {
+        const isDark = document.body.classList.toggle('dark-mode');
+        localStorage.setItem('kmb_theme', isDark ? 'dark' : 'light');
+        updateThemeBtnState(isDark);
+    }
+
+    function updateThemeBtnState(isDark) {
+        const btn = document.getElementById('theme-toggle-btn');
+        if (btn) btn.innerText = isDark ? '☀️ 明亮模式' : '🌙 暗黑模式';
+    }
+
     function switchTab(tabId) {
         currentTabId = tabId;
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -320,17 +399,13 @@
         document.getElementById(tabId).classList.add('active');
         document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`).classList.add('active');
 
-        if (tabId === 'bookmarks') {
-            loadBookmarks();
-        }
+        if (tabId === 'bookmarks') loadBookmarks();
     }
 
     function toggleCollapse(element) {
         element.classList.toggle('collapsed');
         const content = element.nextElementSibling;
-        if (content) {
-            content.classList.toggle('collapsed');
-        }
+        if (content) content.classList.toggle('collapsed');
     }
 
     function getExpandedStates(containerId) {
@@ -351,63 +426,62 @@
         const R = 6371; 
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-                  Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
     }
 
     function formatETA(timestamp) {
         if (!timestamp) return '未有資料';
-        const etaDate = new Date(timestamp);
-        const now = new Date();
-        const diffMins = Math.round((etaDate - now) / 60000);
-        
+        const diffMins = Math.round((new Date(timestamp) - new Date()) / 60000);
         if (diffMins < 0) return '已離開';
         if (diffMins === 0) return '即將抵達';
         return `${diffMins} 分鐘`;
     }
 
+    function getETAClass(timestamp) {
+        if (!timestamp) return '';
+        const diffMins = Math.round((new Date(timestamp) - new Date()) / 60000);
+        if (diffMins < 0) return 'departed';   
+        if (diffMins <= 1) return 'critical';  
+        if (diffMins <= 3) return 'danger';    
+        if (diffMins < 5) return 'warning';    
+        return '';                             
+    }
+
     function getBookmarks() {
-        return JSON.parse(localStorage.getItem('kmb_bookmarks') || '{}');
+        return JSON.parse(localStorage.getItem('kmb_bookmarks_v3') || '{}');
     }
 
     function saveBookmarks(bms) {
-        localStorage.setItem('kmb_bookmarks', JSON.stringify(bms));
+        localStorage.setItem('kmb_bookmarks_v3', JSON.stringify(bms));
     }
 
-    function toggleBookmark(event, id, name) {
+    function toggleBookmark(event, name, idsJson) {
         if(event) event.stopPropagation();
-        
         let bms = getBookmarks();
-        if (bms[id]) {
-            delete bms[id];
+        
+        if (bms[name]) {
+            delete bms[name];
         } else {
-            bms[id] = name;
+            bms[name] = JSON.parse(idsJson); 
         }
         saveBookmarks(bms);
 
-        const isFav = !!bms[id];
-        document.querySelectorAll(`.fav-btn[data-fav-id="${id}"]`).forEach(btn => {
-            if (isFav) {
-                btn.classList.add('active');
-                btn.innerText = '⭐ 已收藏';
-            } else {
-                btn.classList.remove('active');
-                btn.innerText = '☆ 收藏';
-            }
+        const isFav = !!bms[name];
+        document.querySelectorAll(`.fav-btn[data-fav-name="${name}"]`).forEach(btn => {
+            btn.classList.toggle('active', isFav);
+            btn.innerText = isFav ? '⭐ 已收藏' : '☆ 收藏';
         });
 
-        if (currentTabId === 'bookmarks') {
-            loadBookmarks(true);
-        }
+        if (currentTabId === 'bookmarks') loadBookmarks(true);
     }
 
-    function getStarHTML(id, name) {
+    function getStarHTML(name, idsArray) {
         const bms = getBookmarks();
-        const isFav = !!bms[id];
-        return `<button class="fav-btn ${isFav ? 'active' : ''}" data-fav-id="${id}" onclick="toggleBookmark(event, '${id}', '${name}')">${isFav ? '⭐ 已收藏' : '☆ 收藏'}</button>`;
+        const isFav = !!bms[name];
+        const safeName = name.replace(/'/g, "\\'");
+        const idsJson = JSON.stringify(idsArray).replace(/"/g, '&quot;');
+        return `<button class="fav-btn ${isFav ? 'active' : ''}" data-fav-name="${name}" onclick="toggleBookmark(event, '${safeName}', '${idsJson}')">${isFav ? '⭐ 已收藏' : '☆ 收藏'}</button>`;
     }
     
     function toggleAutoRefresh() {
@@ -420,14 +494,11 @@
     }
 
     function doSilentRefresh() {
-        if (currentTabId === 'gps' && lastGpsCoords) {
-            fetchAndRenderGPS(true);
-        } else if (currentTabId === 'search') {
-            const val = document.getElementById('route-input').value.trim();
-            if (val) searchRoute(true);
-        } else if (currentTabId === 'bookmarks') {
-            loadBookmarks(true);
-        }
+        if (currentTabId === 'gps' && lastGpsCoords) fetchAndRenderGPS(true);
+        else if (currentTabId === 'search') {
+            if (document.getElementById('route-input').value.trim()) searchRoute(true);
+        } 
+        else if (currentTabId === 'bookmarks') loadBookmarks(true);
     }
 
     async function ensureStopsLoaded(statusEl, isSilent = false) {
@@ -445,19 +516,12 @@
             
             const json = await res.json();
             json.data.forEach(s => {
-                const cleanId = String(s.stop).trim().toUpperCase();
-                globalStopsMap.set(cleanId, {
-                    name: s.name_tc,
-                    lat: s.lat,
-                    long: s.long,
-                    id: s.stop
-                });
+                globalStopsMap.set(String(s.stop).trim().toUpperCase(), { name: s.name_tc.trim(), lat: s.lat, long: s.long, id: s.stop });
             });
             isStopsLoaded = true;
             isLoadingStops = false;
             return true;
         } catch (error) {
-            console.error('車站資料下載失敗:', error);
             if (statusEl && !isSilent) statusEl.innerText = "⚠️ 資料下載失敗，請檢查網路連線。";
             isLoadingStops = false;
             return false;
@@ -470,7 +534,11 @@
             statusEl.innerText = "您的瀏覽器不支援地理位置功能。";
             return;
         }
-        statusEl.innerText = "正在定位您的位置...";
+        
+        const radius = document.getElementById('radius-select').value;
+        const radiusMeters = Math.round(parseFloat(radius) * 1000);
+        statusEl.innerText = `正在定位您的位置 (搜尋範圍: ${radiusMeters}米)...`;
+        
         navigator.geolocation.getCurrentPosition(async (position) => {
             lastGpsCoords = { lat: position.coords.latitude, lon: position.coords.longitude };
             await fetchAndRenderGPS(false);
@@ -484,37 +552,33 @@
         const statusEl = document.getElementById('gps-status');
         const resultsEl = document.getElementById('gps-results');
         
+        const radiusKm = parseFloat(document.getElementById('radius-select').value);
+        const radiusMeters = Math.round(radiusKm * 1000);
+
         const loaded = await ensureStopsLoaded(statusEl, isSilent);
         if (!loaded) return;
 
         if (!isSilent) {
-            statusEl.innerText = "定位成功！正在比對 500 米內的巴士站資料...";
+            statusEl.innerText = `定位成功！正在比對 ${radiusMeters} 米內的巴士站資料...`;
             resultsEl.innerHTML = "";
         }
 
         const expandedStates = isSilent ? getExpandedStates('gps-results') : [];
 
         const nearbyPoles = Array.from(globalStopsMap.values())
-            .map(stop => ({
-                ...stop,
-                dist: getDistance(lastGpsCoords.lat, lastGpsCoords.lon, parseFloat(stop.lat), parseFloat(stop.long))
-            }))
-            .filter(stop => stop.dist <= 0.5);
+            .map(stop => ({ ...stop, dist: getDistance(lastGpsCoords.lat, lastGpsCoords.lon, parseFloat(stop.lat), parseFloat(stop.long)) }))
+            .filter(stop => stop.dist <= radiusKm);
 
         if (nearbyPoles.length === 0) {
-            statusEl.innerText = "您附近 500 米內沒有九巴/龍運巴士站。";
+            statusEl.innerText = `您附近 ${radiusMeters} 米內沒有九巴/龍運巴士站。`;
             return;
         }
 
         const groupedByName = {};
         nearbyPoles.forEach(pole => {
-            if (!groupedByName[pole.name]) {
-                groupedByName[pole.name] = { name: pole.name, minDist: pole.dist, poles: [] };
-            }
+            if (!groupedByName[pole.name]) groupedByName[pole.name] = { name: pole.name, minDist: pole.dist, poles: [] };
             groupedByName[pole.name].poles.push(pole);
-            if (pole.dist < groupedByName[pole.name].minDist) {
-                groupedByName[pole.name].minDist = pole.dist;
-            }
+            if (pole.dist < groupedByName[pole.name].minDist) groupedByName[pole.name].minDist = pole.dist;
         });
 
         const sortedGroups = Object.values(groupedByName).sort((a, b) => a.minDist - b.minDist);
@@ -528,9 +592,7 @@
                 try {
                     const res = await fetch(`${KMB_BASE_URL}/stop-eta/${pole.id}`);
                     const json = await res.json();
-                    json.data.filter(eta => eta.eta).forEach(eta => {
-                        validEtas.push({ ...eta, poleId: pole.id });
-                    });
+                    json.data.filter(eta => eta.eta).forEach(eta => validEtas.push(eta));
                 } catch (e) { }
             });
 
@@ -538,12 +600,17 @@
             if (validEtas.length === 0) continue; 
 
             const routeGroups = {};
+            const uniqueEtas = new Map();
             validEtas.forEach(eta => {
-                const key = `${eta.route}_${eta.dest_tc}_${eta.poleId}`;
+                const key = `${eta.route}_${eta.dest_tc}`;
                 if (!routeGroups[key]) {
-                    routeGroups[key] = { route: eta.route, destination: eta.dest_tc, poleId: eta.poleId, etas: [] };
+                    routeGroups[key] = { route: eta.route, destination: eta.dest_tc, etas: [] };
                 }
-                routeGroups[key].etas.push({ time: eta.eta, remark: eta.rmk_tc, timestamp: new Date(eta.eta).getTime() });
+                const etaKey = `${key}_${eta.eta}`;
+                if (!uniqueEtas.has(etaKey)) {
+                    uniqueEtas.set(etaKey, true);
+                    routeGroups[key].etas.push({ time: eta.eta, remark: eta.rmk_tc, timestamp: new Date(eta.eta).getTime() });
+                }
             });
 
             const sortedRouteGroups = Object.values(routeGroups).sort((a, b) => a.route.localeCompare(b.route, undefined, {numeric: true}));
@@ -556,7 +623,10 @@
                             <span class="toggle-icon">▼</span>
                             <span>🚏 ${group.name}</span>
                         </div>
-                        <span style="font-size: 13px; font-weight: normal; background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 12px;">約 ${Math.round(group.minDist * 1000)} 米</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 13px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 8px; border-radius: 12px;">約 ${Math.round(group.minDist * 1000)} 米</span>
+                            <div onclick="event.stopPropagation()">${getStarHTML(group.name, group.poles.map(p=>p.id))}</div>
+                        </div>
                     </h3>
                     <div class="result-list collapsed">
             `;
@@ -564,7 +634,7 @@
             sortedRouteGroups.forEach(rg => {
                 rg.etas.sort((a, b) => a.timestamp - b.timestamp);
                 const etasHtml = rg.etas.slice(0, 3).map(e => `
-                    <div class="eta-item"><span class="eta-time-text">${formatETA(e.time)}</span><span class="eta-remark">${e.remark || ''}</span></div>
+                    <div class="eta-item"><span class="eta-time-text ${getETAClass(e.time)}">${formatETA(e.time)}</span><span class="eta-remark">${e.remark || ''}</span></div>
                 `).join('');
 
                 htmlOutput += `
@@ -572,9 +642,6 @@
                         <div class="route-info">
                             <div class="route-number">${rg.route}</div>
                             <div class="destination">往: ${rg.destination}</div>
-                            <div class="stop-id-remark">
-                                ${getStarHTML(rg.poleId, group.name)}
-                            </div>
                         </div>
                         <div class="eta-times-container">${etasHtml}</div>
                     </div>
@@ -584,7 +651,7 @@
         }
 
         if (htmlOutput === '') {
-            statusEl.innerText = "附近巴士站暫時沒有即時到站資料。";
+            statusEl.innerText = `附近巴士站暫時沒有即時到站資料。`;
         } else {
             statusEl.innerText = `更新於 ${new Date().toLocaleTimeString()} 🔽`;
             resultsEl.innerHTML = htmlOutput;
@@ -597,10 +664,7 @@
         const statusEl = document.getElementById('search-status');
         const resultsEl = document.getElementById('search-results');
 
-        if (!input) {
-            statusEl.innerText = "請輸入巴士路線號碼。";
-            return;
-        }
+        if (!input) return;
 
         const loaded = await ensureStopsLoaded(statusEl, isSilent);
         if (!loaded) return;
@@ -659,7 +723,7 @@
                     }
 
                     directions[dir].data.push({
-                        seq: eta.seq, stopId: realStopId, stopName: matchedStopName, eta: eta.eta, remark: eta.rmk_tc
+                        seq: eta.seq, stopName: matchedStopName, eta: eta.eta, remark: eta.rmk_tc
                     });
                 }
             });
@@ -671,7 +735,7 @@
                     const stopsGrouped = {};
                     group.data.forEach(item => {
                         if (!stopsGrouped[item.seq]) {
-                            stopsGrouped[item.seq] = { stopName: item.stopName, stopId: item.stopId, etas: [] };
+                            stopsGrouped[item.seq] = { stopName: item.stopName, etas: [] };
                         }
                         stopsGrouped[item.seq].etas.push({ time: item.eta, remark: item.remark, timestamp: new Date(item.eta).getTime() });
                     });
@@ -692,14 +756,18 @@
                     sortedSeqs.forEach(seq => {
                         const stopInfo = stopsGrouped[seq];
                         stopInfo.etas.sort((a, b) => a.timestamp - b.timestamp);
-                        const etasHtml = stopInfo.etas.slice(0, 3).map(e => `<div class="eta-item"><span class="eta-time-text">${formatETA(e.time)}</span><span class="eta-remark">${e.remark || ''}</span></div>`).join('');
+                        const etasHtml = stopInfo.etas.slice(0, 3).map(e => `
+                            <div class="eta-item"><span class="eta-time-text ${getETAClass(e.time)}">${formatETA(e.time)}</span><span class="eta-remark">${e.remark || ''}</span></div>
+                        `).join('');
+                        
+                        const allPoles = Array.from(globalStopsMap.values()).filter(s => s.name === stopInfo.stopName).map(s => s.id);
 
                         htmlOutput += `
                             <div class="card">
                                 <div class="route-info">
-                                    <div class="stop-name">${seq}. ${stopInfo.stopName}</div>
-                                    <div class="stop-id-remark">
-                                        ${getStarHTML(stopInfo.stopId, stopInfo.stopName)}
+                                    <div class="stop-name" style="margin-bottom: 4px;">${seq}. ${stopInfo.stopName}</div>
+                                    <div onclick="event.stopPropagation()">
+                                        ${getStarHTML(stopInfo.stopName, allPoles)}
                                     </div>
                                 </div>
                                 <div class="eta-times-container">${etasHtml}</div>
@@ -736,6 +804,9 @@
             return;
         }
 
+        const loaded = await ensureStopsLoaded(statusEl, isSilent);
+        if (!loaded) return;
+
         if (!isSilent) {
             statusEl.innerText = "正在更新收藏站點的實時數據...";
             resultsEl.innerHTML = "";
@@ -744,57 +815,67 @@
         const expandedStates = isSilent ? getExpandedStates('bookmarks-results') : [];
         let htmlOutput = '';
 
-        for (const id of keys) {
-            const name = bms[id];
-            try {
-                const res = await fetch(`${KMB_BASE_URL}/stop-eta/${id}`);
-                const json = await res.json();
-                const validEtas = json.data.filter(eta => eta.eta);
+        for (const name of keys) {
+            const ids = bms[name];
+            let validEtas = [];
+            
+            const fetchPromises = ids.map(async (id) => {
+                try {
+                    const res = await fetch(`${KMB_BASE_URL}/stop-eta/${id}`);
+                    const json = await res.json();
+                    json.data.filter(eta => eta.eta).forEach(eta => validEtas.push(eta));
+                } catch (e) {}
+            });
+            await Promise.all(fetchPromises);
 
-                const routeGroups = {};
-                validEtas.forEach(eta => {
-                    const key = `${eta.route}_${eta.dest_tc}`;
-                    if (!routeGroups[key]) {
-                        routeGroups[key] = { route: eta.route, destination: eta.dest_tc, etas: [] };
-                    }
-                    routeGroups[key].etas.push({ time: eta.eta, remark: eta.rmk_tc, timestamp: new Date(eta.eta).getTime() });
-                });
-
-                const sortedRouteGroups = Object.values(routeGroups).sort((a,b) => a.route.localeCompare(b.route, undefined, {numeric: true}));
-
-                htmlOutput += `
-                    <div class="direction-group">
-                        <h3 class="direction-header ${isSilent ? 'collapsed' : ''}" data-group-id="bm_${id}" onclick="toggleCollapse(this)">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="toggle-icon">▼</span>
-                                <span>🚏 ${name}</span>
-                            </div>
-                            <div onclick="event.stopPropagation()">${getStarHTML(id, name)}</div>
-                        </h3>
-                        <div class="result-list ${isSilent ? 'collapsed' : ''}">
-                `;
-
-                if (sortedRouteGroups.length === 0) {
-                    htmlOutput += `<div class="card"><div class="route-info" style="color: var(--text-secondary)">暫無近期的班次資料</div></div>`;
-                } else {
-                    sortedRouteGroups.forEach(rg => {
-                        rg.etas.sort((a,b) => a.timestamp - b.timestamp);
-                        const etasHtml = rg.etas.slice(0, 3).map(e => `<div class="eta-item"><span class="eta-time-text">${formatETA(e.time)}</span><span class="eta-remark">${e.remark || ''}</span></div>`).join('');
-                        htmlOutput += `
-                            <div class="card">
-                                <div class="route-info">
-                                    <div class="route-number">${rg.route}</div>
-                                    <div class="destination">往: ${rg.destination}</div>
-                                </div>
-                                <div class="eta-times-container">${etasHtml}</div>
-                            </div>
-                        `;
-                    });
+            const routeGroups = {};
+            const uniqueEtas = new Map();
+            validEtas.forEach(eta => {
+                const key = `${eta.route}_${eta.dest_tc}`;
+                if (!routeGroups[key]) {
+                    routeGroups[key] = { route: eta.route, destination: eta.dest_tc, etas: [] };
                 }
-                htmlOutput += `</div></div>`;
-            } catch (e) {
-                console.error("Bookmark fetch error", e);
+                const etaKey = `${key}_${eta.eta}`;
+                if (!uniqueEtas.has(etaKey)) {
+                    uniqueEtas.set(etaKey, true);
+                    routeGroups[key].etas.push({ time: eta.eta, remark: eta.rmk_tc, timestamp: new Date(eta.eta).getTime() });
+                }
+            });
+
+            const sortedRouteGroups = Object.values(routeGroups).sort((a,b) => a.route.localeCompare(b.route, undefined, {numeric: true}));
+
+            htmlOutput += `
+                <div class="direction-group">
+                    <h3 class="direction-header ${isSilent ? 'collapsed' : ''}" data-group-id="bm_${name}" onclick="toggleCollapse(this)">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="toggle-icon">▼</span>
+                            <span>🚏 ${name}</span>
+                        </div>
+                        <div onclick="event.stopPropagation()">${getStarHTML(name, ids)}</div>
+                    </h3>
+                    <div class="result-list ${isSilent ? 'collapsed' : ''}">
+            `;
+
+            if (sortedRouteGroups.length === 0) {
+                htmlOutput += `<div class="card"><div class="route-info" style="color: var(--text-secondary)">暫無近期的班次資料</div></div>`;
+            } else {
+                sortedRouteGroups.forEach(rg => {
+                    rg.etas.sort((a,b) => a.timestamp - b.timestamp);
+                    const etasHtml = rg.etas.slice(0, 3).map(e => `
+                        <div class="eta-item"><span class="eta-time-text ${getETAClass(e.time)}">${formatETA(e.time)}</span><span class="eta-remark">${e.remark || ''}</span></div>
+                    `).join('');
+                    htmlOutput += `
+                        <div class="card">
+                            <div class="route-info">
+                                <div class="route-number">${rg.route}</div>
+                                <div class="destination">往: ${rg.destination}</div>
+                            </div>
+                            <div class="eta-times-container">${etasHtml}</div>
+                        </div>
+                    `;
+                });
             }
+            htmlOutput += `</div></div>`;
         }
 
         resultsEl.innerHTML = htmlOutput;
@@ -809,9 +890,14 @@
         }
     }
 
-    // 頁面載入完成後預設啟動自動更新
     document.addEventListener('DOMContentLoaded', () => {
+        const savedTheme = localStorage.getItem('kmb_theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            updateThemeBtnState(true);
+        }
         toggleAutoRefresh();
+        updateGpsPrompt(); // 初始化提示文字
     });
 </script>
 
