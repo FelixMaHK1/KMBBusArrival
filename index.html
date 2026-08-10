@@ -346,11 +346,11 @@
     <div id="gps" class="panel active">
         <div class="search-box" style="justify-content: center; margin-bottom: 12px;">
             <select id="radius-select" class="input-control" onchange="updateGpsPrompt()">
-                <option value="0.3">範圍: 300 米</option>
-                <option value="0.5" selected>範圍: 500 米</option>
-                <option value="1.0">範圍: 1000 米</option>
+                <option value="0.3" selected>範圍: 300 米</option>
+                <option value="0.5">範圍: 500 米</option>
+                <option value="1.0">範圍: 1 km</option>
             </select>
-            <button class="action-btn" onclick="findNearbyStops()">定位尋找</button>
+            <button class="action-btn" onclick="findNearbyStops()">重新定位</button>
         </div>
         
         <div class="search-box" style="margin-bottom: 16px;">
@@ -513,10 +513,18 @@
     let lastGpsCoords = null; 
     let lastDistrictCode = null;
 
+    /* ==== 距離格式化函數 ==== */
+    function formatDistance(distInKm) {
+        if (distInKm >= 1) {
+            return parseFloat(distInKm.toFixed(2)) + ' km';
+        } else {
+            return Math.round(distInKm * 1000) + ' 米';
+        }
+    }
+
     function updateGpsPrompt() {
-        const radius = document.getElementById('radius-select').value;
-        const radiusMeters = Math.round(parseFloat(radius) * 1000);
-        document.getElementById('gps-status').innerText = `準備就緒。點擊上方按鈕尋找附近 ${radiusMeters} 米的巴士站。`;
+        const radius = parseFloat(document.getElementById('radius-select').value);
+        document.getElementById('gps-status').innerText = `準備就緒。點擊上方按鈕尋找附近 ${formatDistance(radius)} 的巴士站。`;
     }
 
     function toggleTheme() {
@@ -712,7 +720,7 @@
             .filter(stop => stop.dist <= radiusKm);
 
         if (nearbyPoles.length === 0) {
-            statusEl.innerText = `該區域 ${Math.round(radiusKm * 1000)} 米內沒有九巴/龍運巴士站。`;
+            statusEl.innerText = `該區域 ${formatDistance(radiusKm)} 內沒有九巴/龍運巴士站。`;
             return;
         }
 
@@ -770,7 +778,7 @@
                             <span>🚏 ${group.name}</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 12px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 6px; border-radius: 12px;">約 ${Math.round(group.minDist * 1000)} 米</span>
+                            <span style="font-size: 12px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 6px; border-radius: 12px;">約 ${formatDistance(group.minDist)}</span>
                             <div onclick="event.stopPropagation()">${getStarHTML(group.name, group.poles.map(p=>p.id))}</div>
                         </div>
                     </h3>
@@ -814,12 +822,12 @@
             return;
         }
         
-        const radius = document.getElementById('radius-select').value;
+        const radius = parseFloat(document.getElementById('radius-select').value);
         statusEl.innerText = `正在定位您的位置...`;
         
         navigator.geolocation.getCurrentPosition(async (position) => {
             lastGpsCoords = { lat: position.coords.latitude, lon: position.coords.longitude };
-            await fetchAndRenderStops(lastGpsCoords.lat, lastGpsCoords.lon, 'gps-status', 'gps-results', parseFloat(radius), 'gps', false);
+            await fetchAndRenderStops(lastGpsCoords.lat, lastGpsCoords.lon, 'gps-status', 'gps-results', radius, 'gps', false);
         }, (error) => {
             statusEl.innerText = "無法獲取位置，請確認是否已授予位置權限。";
         });
@@ -1067,7 +1075,7 @@
             
             let distBadge = '';
             if (sortMode === 'distance' && bm.minDist !== Infinity) {
-                distBadge = `<span style="font-size: 12px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 6px; border-radius: 12px; margin-right: 8px;">約 ${Math.round(bm.minDist * 1000)} 米</span>`;
+                distBadge = `<span style="font-size: 12px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 6px; border-radius: 12px; margin-right: 8px;">約 ${formatDistance(bm.minDist)}</span>`;
             }
 
             const routeListStr = sortedRouteGroups.map(rg => rg.route).join(',');
@@ -1131,6 +1139,9 @@
         }
         toggleAutoRefresh();
         updateGpsPrompt(); 
+        
+        // 新增：頁面載入後自動定位並搜尋附近 300 米的巴士站
+        findNearbyStops();
     });
 </script>
 
