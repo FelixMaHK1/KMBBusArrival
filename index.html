@@ -321,6 +321,7 @@
 <div class="container">
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('gps')">📍 附近</button>
+        <!-- 改回 18區，但內部保留港鐵站選項 -->
         <button class="tab-btn" onclick="switchTab('districts')">🗺️ 18區</button>
         <button class="tab-btn" onclick="switchTab('search')">🔍 路線</button>
         <button class="tab-btn" onclick="switchTab('bookmarks')">⭐ 收藏</button>
@@ -337,7 +338,6 @@
             <button class="action-btn" onclick="findNearbyStops()">定位尋找</button>
         </div>
         
-        <!-- 新增功能：目的地即時過濾框 -->
         <div class="search-box" style="margin-bottom: 16px;">
              <input type="text" id="gps-filter" class="input-control" placeholder="🔍 篩選附近路線 (例如終點站: 尖沙咀, 沙田)" onkeyup="applyGpsFilter()">
         </div>
@@ -346,38 +346,71 @@
         <div id="gps-results" class="scrollable-area"></div>
     </div>
 
-    <!-- 18區探索 -->
+    <!-- 18區探索 (依地區分組，以地鐵站為地標) -->
     <div id="districts" class="panel">
         <div class="search-box">
             <select id="district-select" class="input-control" style="flex: 1;">
-                <optgroup label="香港島">
-                    <option value="CW">中西區</option>
-                    <option value="WC">灣仔</option>
-                    <option value="EA">東區</option>
-                    <option value="SO">南區</option>
+                <optgroup label="📍 中西區 & 灣仔區">
+                    <option value="CEN">中環站</option>
+                    <option value="ADM">金鐘站</option>
+                    <option value="WC">灣仔站</option>
+                    <option value="CWB">銅鑼灣站</option>
                 </optgroup>
-                <optgroup label="九龍">
-                    <option value="YTM" selected>油尖旺</option>
-                    <option value="SSP">深水埗</option>
-                    <option value="KC">九龍城</option>
-                    <option value="WTS">黃大仙</option>
-                    <option value="KT">觀塘</option>
+                <optgroup label="📍 東區 & 南區">
+                    <option value="NP">北角站</option>
+                    <option value="TAK">太古站</option>
+                    <option value="CW">柴灣站</option>
+                    <option value="SOH">海怡半島站</option>
+                    <option value="WCH">黃竹坑站</option>
                 </optgroup>
-                <optgroup label="新界">
-                    <option value="KWT">葵青</option>
-                    <option value="TW">荃灣</option>
-                    <option value="TM">屯門</option>
-                    <option value="YL">元朗</option>
-                    <option value="NO">北區</option>
-                    <option value="TP">大埔</option>
-                    <option value="ST">沙田</option>
-                    <option value="SK">西貢</option>
-                    <option value="IS">離島</option>
+                <optgroup label="📍 油尖旺區">
+                    <option value="TST">尖沙咀站</option>
+                    <option value="JD">佐敦站</option>
+                    <option value="MK" selected>旺角站</option>
+                    <option value="PE">太子站</option>
+                </optgroup>
+                <optgroup label="📍 深水埗 & 九龍城">
+                    <option value="SSP">深水埗站</option>
+                    <option value="MEF">美孚站</option>
+                    <option value="KOT">九龍塘站</option>
+                    <option value="KAT">啟德站</option>
+                    <option value="HUH">紅磡站</option>
+                </optgroup>
+                <optgroup label="📍 黃大仙 & 觀塘">
+                    <option value="WTS">黃大仙站</option>
+                    <option value="DIH">鑽石山站</option>
+                    <option value="CH">彩虹站</option>
+                    <option value="KB">九龍灣站</option>
+                    <option value="KT">觀塘站</option>
+                </optgroup>
+                <optgroup label="📍 葵青 & 荃灣">
+                    <option value="KWF">葵芳站</option>
+                    <option value="TSY">青衣站</option>
+                    <option value="TW">荃灣站</option>
+                    <option value="TWW">荃灣西站</option>
+                </optgroup>
+                <optgroup label="📍 屯門 & 元朗">
+                    <option value="TUM">屯門站</option>
+                    <option value="TSW">天水圍站</option>
+                    <option value="YUL">元朗站</option>
+                </optgroup>
+                <optgroup label="📍 北區 & 大埔 & 沙田">
+                    <option value="FAN">粉嶺站</option>
+                    <option value="SHS">上水站</option>
+                    <option value="TAP">大埔墟站</option>
+                    <option value="TAW">大圍站</option>
+                    <option value="SHT">沙田站</option>
+                    <option value="UNI">大學站</option>
+                </optgroup>
+                <optgroup label="📍 西貢 & 離島">
+                    <option value="HAH">坑口站</option>
+                    <option value="POA">寶琳站</option>
+                    <option value="TUC">東涌站</option>
                 </optgroup>
             </select>
             <button class="action-btn" onclick="searchByDistrict()">探索該區</button>
         </div>
-        <div id="districts-status" class="status">選擇地區，瀏覽該區市中心周邊的巴士站。</div>
+        <div id="districts-status" class="status">選擇地區地標，瀏覽周邊的巴士站。</div>
         <div id="districts-results" class="scrollable-area"></div>
     </div>
 
@@ -408,25 +441,47 @@
 <script>
     const KMB_BASE_URL = 'https://data.etabus.gov.hk/v1/transport/kmb';
     
+    // 18區 + 港鐵地標座標對照表
     const DISTRICTS_COORDS = {
-        "CW": { name: "中西區", lat: 22.2819, lon: 114.1581 },
-        "WC": { name: "灣仔", lat: 22.2760, lon: 114.1751 },
-        "EA": { name: "東區", lat: 22.2821, lon: 114.2166 },
-        "SO": { name: "南區", lat: 22.2472, lon: 114.1588 },
-        "YTM": { name: "油尖旺", lat: 22.3116, lon: 114.1706 },
-        "SSP": { name: "深水埗", lat: 22.3307, lon: 114.1622 },
-        "KC": { name: "九龍城", lat: 22.3282, lon: 114.1916 },
-        "WTS": { name: "黃大仙", lat: 22.3429, lon: 114.1930 },
-        "KT": { name: "觀塘", lat: 22.3132, lon: 114.2258 },
-        "KWT": { name: "葵青", lat: 22.3549, lon: 114.1261 },
-        "TW": { name: "荃灣", lat: 22.3713, lon: 114.1136 },
-        "TM": { name: "屯門", lat: 22.3908, lon: 113.9725 },
-        "YL": { name: "元朗", lat: 22.4445, lon: 114.0222 },
-        "NO": { name: "北區", lat: 22.4947, lon: 114.1381 },
-        "TP": { name: "大埔", lat: 22.4423, lon: 114.1655 },
-        "ST": { name: "沙田", lat: 22.3771, lon: 114.1872 },
-        "SK": { name: "西貢", lat: 22.3838, lon: 114.2710 },
-        "IS": { name: "離島", lat: 22.2611, lon: 113.9460 }
+        "CEN": { name: "中環站", lat: 22.2818, lon: 114.1583 },
+        "ADM": { name: "金鐘站", lat: 22.2796, lon: 114.1646 },
+        "WC": { name: "灣仔站", lat: 22.2775, lon: 114.1731 },
+        "CWB": { name: "銅鑼灣站", lat: 22.2797, lon: 114.1833 },
+        "NP": { name: "北角站", lat: 22.2913, lon: 114.2003 },
+        "TAK": { name: "太古站", lat: 22.2846, lon: 114.2163 },
+        "CW": { name: "柴灣站", lat: 22.2644, lon: 114.2365 },
+        "SOH": { name: "海怡半島站", lat: 22.2443, lon: 114.1523 },
+        "WCH": { name: "黃竹坑站", lat: 22.2480, lon: 114.1720 },
+        "TST": { name: "尖沙咀站", lat: 22.2980, lon: 114.1722 },
+        "JD": { name: "佐敦站", lat: 22.3049, lon: 114.1716 },
+        "MK": { name: "旺角站", lat: 22.3192, lon: 114.1693 },
+        "PE": { name: "太子站", lat: 22.3245, lon: 114.1681 },
+        "SSP": { name: "深水埗站", lat: 22.3308, lon: 114.1622 },
+        "MEF": { name: "美孚站", lat: 22.3338, lon: 114.1367 },
+        "KOT": { name: "九龍塘站", lat: 22.3374, lon: 114.1758 },
+        "KAT": { name: "啟德站", lat: 22.3305, lon: 114.1989 },
+        "HUH": { name: "紅磡站", lat: 22.3031, lon: 114.1813 },
+        "WTS": { name: "黃大仙站", lat: 22.3421, lon: 114.1930 },
+        "DIH": { name: "鑽石山站", lat: 22.3404, lon: 114.2017 },
+        "CH": { name: "彩虹站", lat: 22.3336, lon: 114.2127 },
+        "KB": { name: "九龍灣站", lat: 22.3236, lon: 114.2140 },
+        "KT": { name: "觀塘站", lat: 22.3122, lon: 114.2261 },
+        "KWF": { name: "葵芳站", lat: 22.3574, lon: 114.1278 },
+        "TSY": { name: "青衣站", lat: 22.3584, lon: 114.1064 },
+        "TW": { name: "荃灣站", lat: 22.3731, lon: 114.1182 },
+        "TWW": { name: "荃灣西站", lat: 22.3685, lon: 114.1114 },
+        "TUM": { name: "屯門站", lat: 22.3948, lon: 113.9745 },
+        "TSW": { name: "天水圍站", lat: 22.4462, lon: 114.0055 },
+        "YUL": { name: "元朗站", lat: 22.4452, lon: 114.0326 },
+        "FAN": { name: "粉嶺站", lat: 22.4920, lon: 114.1396 },
+        "SHS": { name: "上水站", lat: 22.5015, lon: 114.1275 },
+        "TAP": { name: "大埔墟站", lat: 22.4443, lon: 114.1687 },
+        "TAW": { name: "大圍站", lat: 22.3727, lon: 114.1786 },
+        "SHT": { name: "沙田站", lat: 22.3820, lon: 114.1871 },
+        "UNI": { name: "大學站", lat: 22.4132, lon: 114.2104 },
+        "HAH": { name: "坑口站", lat: 22.3157, lon: 114.2643 },
+        "POA": { name: "寶琳站", lat: 22.3228, lon: 114.2582 },
+        "TUC": { name: "東涌站", lat: 22.2892, lon: 113.9413 }
     };
 
     let globalStopsMap = new Map();
@@ -554,7 +609,6 @@
         });
     }
 
-    /* ==== 新增：附近路線的即時過濾功能 ==== */
     function applyGpsFilter() {
         const filterText = document.getElementById('gps-filter').value.trim().toUpperCase();
         const groups = document.querySelectorAll('#gps-results .direction-group');
@@ -564,7 +618,6 @@
             const cards = group.querySelectorAll('.card');
             
             cards.forEach(card => {
-                // 抓取路線號碼與目的地文字來做比對
                 const destText = card.querySelector('.destination').innerText.toUpperCase();
                 const routeText = card.querySelector('.route-number').innerText.toUpperCase();
                 
@@ -576,7 +629,6 @@
                 }
             });
             
-            // 如果這個車站下沒有任何符合的路線，就隱藏整個車站
             group.style.display = hasVisibleCard ? '' : 'none';
         });
     }
@@ -731,7 +783,6 @@
             resultsEl.innerHTML = htmlOutput;
             if (isSilent) restoreExpandedStates(resultsId, expandedStates);
             
-            // 每次渲染完畢後，確保目前的篩選條件仍有效
             if (prefix === 'gps') applyGpsFilter();
         }
     }
@@ -757,14 +808,14 @@
     async function searchByDistrict(isSilent = false) {
         const selectEl = document.getElementById('district-select');
         lastDistrictCode = selectEl.value;
-        const distInfo = DISTRICTS_COORDS[lastDistrictCode];
+        const locInfo = DISTRICTS_COORDS[lastDistrictCode];
         
-        if (!distInfo) return;
+        if (!locInfo) return;
 
         const statusEl = document.getElementById('districts-status');
-        if (!isSilent) statusEl.innerText = `正在載入 ${distInfo.name} 周邊的巴士站...`;
+        if (!isSilent) statusEl.innerText = `正在載入 ${locInfo.name} 周邊的巴士站...`;
 
-        await fetchAndRenderStops(distInfo.lat, distInfo.lon, 'districts-status', 'districts-results', 1.5, 'dist', isSilent, 15);
+        await fetchAndRenderStops(locInfo.lat, locInfo.lon, 'districts-status', 'districts-results', 1.0, 'dist', isSilent, 15);
     }
 
     async function searchRoute(isSilent = false) {
