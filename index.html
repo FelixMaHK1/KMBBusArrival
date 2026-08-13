@@ -239,6 +239,20 @@
 
         .direction-group { margin-bottom: 24px; }
         
+        /* 升級：現代膠囊型 Hover 效果 (無下劃線) */
+        .dist-badge {
+            font-size: 12px;
+            font-weight: normal;
+            background: var(--dist-badge-bg);
+            padding: 3px 8px;
+            border-radius: 12px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.2;
+        }
+
         .direction-header {
             background: var(--primary);
             color: white;
@@ -261,20 +275,6 @@
         .direction-header.collapsed .toggle-icon { transform: rotate(-90deg); }
         .result-list { display: flex; flex-direction: column; gap: 12px; }
         .result-list.collapsed { display: none; }
-
-        /* 距離標籤（Badge）專屬優化樣式 */
-        .dist-badge {
-            font-size: 12px;
-            font-weight: normal;
-            background: var(--dist-badge-bg);
-            padding: 3px 8px;
-            border-radius: 12px;
-            white-space: nowrap; /* 解決不正常換行問題 */
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1.2;
-        }
 
         .card {
             border: 1px solid var(--border);
@@ -610,7 +610,6 @@
         searchRoute(false, stopName);
     }
 
-    /* ==== 單位統一改為 m 與 km ==== */
     function formatDistance(distInKm) {
         if (distInKm >= 1) {
             return parseFloat(distInKm.toFixed(2)) + ' km';
