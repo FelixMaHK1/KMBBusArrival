@@ -128,7 +128,6 @@
             background: var(--card-bg);
         }
 
-        /* 優化 Checkbox 樣式 */
         .custom-checkbox {
             accent-color: var(--primary);
             width: 16px;
@@ -263,6 +262,20 @@
         .result-list { display: flex; flex-direction: column; gap: 12px; }
         .result-list.collapsed { display: none; }
 
+        /* 距離標籤（Badge）專屬優化樣式 */
+        .dist-badge {
+            font-size: 12px;
+            font-weight: normal;
+            background: var(--dist-badge-bg);
+            padding: 3px 8px;
+            border-radius: 12px;
+            white-space: nowrap; /* 解決不正常換行問題 */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.2;
+        }
+
         .card {
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -365,7 +378,6 @@
         .eta-time-text.critical { color: var(--eta-critical); animation: alert-flash 1s infinite; }
         .eta-time-text.departed { color: var(--eta-departed); font-weight: normal; }
 
-        /* 具體時間標籤樣式 */
         .eta-exact-time {
             font-size: 11px;
             font-weight: normal;
@@ -412,8 +424,8 @@
     <div id="gps" class="panel active">
         <div class="search-box" style="justify-content: center; margin-bottom: 12px;">
             <select id="radius-select" class="input-control" onchange="updateGpsPrompt()">
-                <option value="0.3" selected>範圍: 300 米</option>
-                <option value="0.5">範圍: 500 米</option>
+                <option value="0.3" selected>範圍: 300 m</option>
+                <option value="0.5">範圍: 500 m</option>
                 <option value="1.0">範圍: 1 km</option>
             </select>
             <button class="action-btn" onclick="findNearbyStops()">重新定位</button>
@@ -579,7 +591,6 @@
     let lastGpsCoords = null; 
     let lastDistrictCode = null;
 
-    /* ==== 生成 Google Maps 導航按鈕的 HTML ==== */
     function getMapNavHTML(polesArray) {
         if (!polesArray || polesArray.length === 0) return '';
         const lat = polesArray[0].lat;
@@ -599,21 +610,20 @@
         searchRoute(false, stopName);
     }
 
+    /* ==== 單位統一改為 m 與 km ==== */
     function formatDistance(distInKm) {
         if (distInKm >= 1) {
             return parseFloat(distInKm.toFixed(2)) + ' km';
         } else {
-            return Math.round(distInKm * 1000) + ' 米';
+            return Math.round(distInKm * 1000) + ' m';
         }
     }
 
-    /* ==== 升級：同時顯示倒數分鐘與具體抵達時間 ==== */
     function formatETA(timestamp) {
         if (!timestamp) return '未有資料';
         const etaDate = new Date(timestamp);
         const diffMins = Math.round((etaDate - new Date()) / 60000);
         
-        // 格式化具體時間為 HH:MM (如: 14:05)
         const hours = String(etaDate.getHours()).padStart(2, '0');
         const minutes = String(etaDate.getMinutes()).padStart(2, '0');
         const exactTimeStr = `<span class="eta-exact-time">(${hours}:${minutes})</span>`;
@@ -871,7 +881,7 @@
                             <span>🚏 ${group.name}</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <span style="font-size: 12px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 6px; border-radius: 12px;">約 ${formatDistance(group.minDist)}</span>
+                            <span class="dist-badge">約 ${formatDistance(group.minDist)}</span>
                             ${getMapNavHTML(group.poles)}
                             <div onclick="event.stopPropagation()">${getStarHTML(group.name, group.poles.map(p=>p.id))}</div>
                         </div>
@@ -1204,7 +1214,7 @@
             
             let distBadge = '';
             if (sortMode === 'distance' && bm.minDist !== Infinity) {
-                distBadge = `<span style="font-size: 12px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 6px; border-radius: 12px;">約 ${formatDistance(bm.minDist)}</span>`;
+                distBadge = `<span class="dist-badge">約 ${formatDistance(bm.minDist)}</span>`;
             }
 
             const routeListStr = sortedRouteGroups.map(rg => rg.route).join(',');
