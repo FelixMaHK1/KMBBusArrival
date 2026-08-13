@@ -35,6 +35,8 @@
             --eta-danger: #c0392b;
             --eta-critical: #e74c3c;
             --eta-departed: #9e9e9e;
+
+            --chip-hover: rgba(211, 47, 47, 0.1);
         }
 
         body.dark-mode {
@@ -61,6 +63,8 @@
             --eta-danger: #ef5350;
             --eta-critical: #ff5252;
             --eta-departed: #757575;
+
+            --chip-hover: rgba(239, 83, 80, 0.2);
         }
 
         /* 鎖定水平捲動 */
@@ -122,6 +126,15 @@
 
         .action-pill:hover {
             background: var(--card-bg);
+        }
+
+        /* 優化 Checkbox 樣式 */
+        .custom-checkbox {
+            accent-color: var(--primary);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            vertical-align: middle;
         }
 
         .container {
@@ -260,11 +273,57 @@
             background: var(--card-bg);
         }
 
-        .route-info { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+        /* 當前車站高亮樣式 */
+        .card.highlight-stop {
+            border: 2px solid var(--primary);
+            background: rgba(211, 47, 47, 0.08);
+        }
+
+        body.dark-mode .card.highlight-stop {
+            border-color: var(--primary);
+            background: rgba(239, 83, 80, 0.15);
+        }
+
+        .route-info { display: flex; flex-direction: column; gap: 4px; flex: 1; align-items: flex-start; }
         .route-number { font-size: 18px; font-weight: bold; color: var(--primary); }
+        
+        .route-number.clickable {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            margin-left: -8px;
+            border-radius: 6px;
+            text-decoration: none !important;
+            transition: background-color 0.2s ease, transform 0.15s ease;
+        }
+        .route-number.clickable:hover {
+            background-color: var(--chip-hover);
+            transform: translateY(-1px);
+        }
+        
         .stop-name { font-size: 14px; font-weight: bold; color: var(--text-primary); }
         .destination { font-size: 13px; font-weight: 500; }
-        
+
+        .action-link-btn {
+            background: var(--fav-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .action-link-btn:hover {
+            background: var(--fav-hover-bg);
+        }
+
         .fav-btn {
             background: var(--fav-bg);
             border: 1px solid var(--border);
@@ -287,7 +346,7 @@
             flex-direction: column;
             align-items: flex-end;
             gap: 4px;
-            min-width: 100px;
+            min-width: 120px;
         }
 
         .eta-item {
@@ -306,11 +365,18 @@
         .eta-time-text.critical { color: var(--eta-critical); animation: alert-flash 1s infinite; }
         .eta-time-text.departed { color: var(--eta-departed); font-weight: normal; }
 
+        /* 具體時間標籤樣式 */
+        .eta-exact-time {
+            font-size: 11px;
+            font-weight: normal;
+            opacity: 0.85;
+            margin-left: 4px;
+        }
+
         @keyframes alert-flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         .eta-remark { font-size: 11px; color: var(--text-secondary); }
 
-        /* 頁尾樣式 */
         footer {
             margin-top: 24px;
             padding-top: 16px;
@@ -327,7 +393,7 @@
     <h1>香港巴士即時到站查詢</h1>
     <div class="header-actions">
         <label class="action-pill">
-            <input type="checkbox" id="auto-refresh-toggle" onchange="toggleAutoRefresh()" checked>
+            <input type="checkbox" id="auto-refresh-toggle" class="custom-checkbox" onchange="toggleAutoRefresh()" checked>
             🔄 自動更新
         </label>
         <button id="theme-toggle-btn" class="action-pill" onclick="toggleTheme()">🌙 暗黑模式</button>
@@ -347,7 +413,7 @@
         <div class="search-box" style="justify-content: center; margin-bottom: 12px;">
             <select id="radius-select" class="input-control" onchange="updateGpsPrompt()">
                 <option value="0.3" selected>範圍: 300 米</option>
-                <option value="0.5">範圍: 500 m</option>
+                <option value="0.5">範圍: 500 米</option>
                 <option value="1.0">範圍: 1 km</option>
             </select>
             <button class="action-btn" onclick="findNearbyStops()">重新定位</button>
@@ -513,13 +579,48 @@
     let lastGpsCoords = null; 
     let lastDistrictCode = null;
 
-    /* ==== 距離格式化函數 ==== */
+    /* ==== 生成 Google Maps 導航按鈕的 HTML ==== */
+    function getMapNavHTML(polesArray) {
+        if (!polesArray || polesArray.length === 0) return '';
+        const lat = polesArray[0].lat;
+        const lon = polesArray[0].long || polesArray[0].lon;
+        
+        if (!lat || !lon) return '';
+
+        const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=walking`;
+        return `<a class="action-link-btn" href="${mapUrl}" target="_blank" onclick="event.stopPropagation()">🗺️ 導航</a>`;
+    }
+
+    function jumpToRouteSearch(route, stopName = null) {
+        if(event) event.stopPropagation();
+        
+        switchTab('search');
+        document.getElementById('route-input').value = route;
+        searchRoute(false, stopName);
+    }
+
     function formatDistance(distInKm) {
         if (distInKm >= 1) {
             return parseFloat(distInKm.toFixed(2)) + ' km';
         } else {
-            return Math.round(distInKm * 1000) + ' m';
+            return Math.round(distInKm * 1000) + ' 米';
         }
+    }
+
+    /* ==== 升級：同時顯示倒數分鐘與具體抵達時間 ==== */
+    function formatETA(timestamp) {
+        if (!timestamp) return '未有資料';
+        const etaDate = new Date(timestamp);
+        const diffMins = Math.round((etaDate - new Date()) / 60000);
+        
+        // 格式化具體時間為 HH:MM (如: 14:05)
+        const hours = String(etaDate.getHours()).padStart(2, '0');
+        const minutes = String(etaDate.getMinutes()).padStart(2, '0');
+        const exactTimeStr = `<span class="eta-exact-time">(${hours}:${minutes})</span>`;
+
+        if (diffMins < 0) return `已離開 ${exactTimeStr}`;
+        if (diffMins === 0) return `即將抵達 ${exactTimeStr}`;
+        return `${diffMins} 分鐘 ${exactTimeStr}`;
     }
 
     function updateGpsPrompt() {
@@ -575,14 +676,6 @@
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
         return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-    }
-
-    function formatETA(timestamp) {
-        if (!timestamp) return '未有資料';
-        const diffMins = Math.round((new Date(timestamp) - new Date()) / 60000);
-        if (diffMins < 0) return '已離開';
-        if (diffMins === 0) return '即將抵達';
-        return `${diffMins} 分鐘`;
     }
 
     function getETAClass(timestamp) {
@@ -777,8 +870,9 @@
                             <span class="toggle-icon">▼</span>
                             <span>🚏 ${group.name}</span>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
                             <span style="font-size: 12px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 6px; border-radius: 12px;">約 ${formatDistance(group.minDist)}</span>
+                            ${getMapNavHTML(group.poles)}
                             <div onclick="event.stopPropagation()">${getStarHTML(group.name, group.poles.map(p=>p.id))}</div>
                         </div>
                     </h3>
@@ -791,10 +885,13 @@
                     <div class="eta-item"><span class="eta-time-text ${getETAClass(e.time)}">${formatETA(e.time)}</span><span class="eta-remark">${e.remark || ''}</span></div>
                 `).join('');
 
+                const safeStopName = group.name.replace(/'/g, "\\'");
                 htmlOutput += `
                     <div class="card">
                         <div class="route-info">
-                            <div class="route-number">${rg.route}</div>
+                            <div class="route-number clickable" onclick="jumpToRouteSearch('${rg.route}', '${safeStopName}')" title="點擊查看 ${rg.route} 完整路線">
+                                ${rg.route} <span style="font-size: 14px;">🔍</span>
+                            </div>
                             <div class="destination">往: ${rg.destination}</div>
                         </div>
                         <div class="eta-times-container">${etasHtml}</div>
@@ -846,7 +943,7 @@
         await fetchAndRenderStops(locInfo.lat, locInfo.lon, 'districts-status', 'districts-results', 1.0, 'dist', isSilent, 15);
     }
 
-    async function searchRoute(isSilent = false) {
+    async function searchRoute(isSilent = false, targetStopName = null) {
         const input = document.getElementById('route-input').value.trim().toUpperCase();
         const statusEl = document.getElementById('search-status');
         const resultsEl = document.getElementById('search-results');
@@ -904,39 +1001,49 @@
                     directions[dir].destination = eta.dest_tc; 
                     const realStopId = routeStopMap[dir]?.[eta.seq] || '未知ID';
                     let matchedStopName = `未知站名 (序號: ${eta.seq})`;
+                    let stopPoleData = null;
                     if (realStopId !== '未知ID') {
-                        const stopData = globalStopsMap.get(realStopId);
-                        if (stopData) matchedStopName = stopData.name;
+                        stopPoleData = globalStopsMap.get(realStopId);
+                        if (stopPoleData) matchedStopName = stopPoleData.name;
                     }
 
                     directions[dir].data.push({
-                        seq: eta.seq, stopName: matchedStopName, eta: eta.eta, remark: eta.rmk_tc
+                        seq: eta.seq, stopName: matchedStopName, eta: eta.eta, remark: eta.rmk_tc, poleData: stopPoleData
                     });
                 }
             });
 
             let htmlOutput = '';
+
             for (const dirKey of ['O', 'I']) {
                 const group = directions[dirKey];
                 if (group.data.length > 0) {
                     const stopsGrouped = {};
+                    let hasTargetInThisDir = false;
+
                     group.data.forEach(item => {
                         if (!stopsGrouped[item.seq]) {
-                            stopsGrouped[item.seq] = { stopName: item.stopName, etas: [] };
+                            stopsGrouped[item.seq] = { stopName: item.stopName, etas: [], poleData: item.poleData };
                         }
                         stopsGrouped[item.seq].etas.push({ time: item.eta, remark: item.remark, timestamp: new Date(item.eta).getTime() });
+                        
+                        if (targetStopName && item.stopName === targetStopName) {
+                            hasTargetInThisDir = true;
+                        }
                     });
 
                     const groupId = `search_${dirKey}`;
+                    const shouldCollapse = isSilent ? true : (targetStopName ? !hasTargetInThisDir : false);
+
                     htmlOutput += `
                         <div class="direction-group">
-                            <h3 class="direction-header ${isSilent ? 'collapsed' : ''}" data-group-id="${groupId}" onclick="toggleCollapse(this)">
+                            <h3 class="direction-header ${shouldCollapse ? 'collapsed' : ''}" data-group-id="${groupId}" onclick="toggleCollapse(this)">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span class="toggle-icon">▼</span>
                                     <span>${group.title} ➔ 往: ${group.destination}</span>
                                 </div>
                             </h3>
-                            <div class="result-list ${isSilent ? 'collapsed' : ''}">
+                            <div class="result-list ${shouldCollapse ? 'collapsed' : ''}">
                     `;
 
                     const sortedSeqs = Object.keys(stopsGrouped).sort((a, b) => parseInt(a) - parseInt(b));
@@ -947,14 +1054,19 @@
                             <div class="eta-item"><span class="eta-time-text ${getETAClass(e.time)}">${formatETA(e.time)}</span><span class="eta-remark">${e.remark || ''}</span></div>
                         `).join('');
                         
-                        const allPoles = Array.from(globalStopsMap.values()).filter(s => s.name === stopInfo.stopName).map(s => s.id);
+                        const allPoles = Array.from(globalStopsMap.values()).filter(s => s.name === stopInfo.stopName);
+                        const isTargetStop = (targetStopName && stopInfo.stopName === targetStopName);
 
                         htmlOutput += `
-                            <div class="card">
+                            <div class="card ${isTargetStop ? 'highlight-stop' : ''}">
                                 <div class="route-info">
-                                    <div class="stop-name" style="margin-bottom: 4px;">${seq}. ${stopInfo.stopName}</div>
-                                    <div onclick="event.stopPropagation()">
-                                        ${getStarHTML(stopInfo.stopName, allPoles)}
+                                    <div class="stop-name" style="margin-bottom: 4px;">
+                                        ${seq}. ${stopInfo.stopName}
+                                        ${isTargetStop ? '<span style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 6px;">📍 當前車站</span>' : ''}
+                                    </div>
+                                    <div style="display: flex; gap: 6px; align-items: center;" onclick="event.stopPropagation()">
+                                        ${getMapNavHTML(allPoles)}
+                                        ${getStarHTML(stopInfo.stopName, allPoles.map(p=>p.id))}
                                     </div>
                                 </div>
                                 <div class="eta-times-container">${etasHtml}</div>
@@ -970,8 +1082,21 @@
             } else {
                 statusEl.innerText = `更新於 ${new Date().toLocaleTimeString()} (資料已就緒)`;
                 resultsEl.innerHTML = htmlOutput;
-                if (isSilent) restoreExpandedStates('search-results', expandedStates);
-                else restoreExpandedStates('search-results', [`search_O`, `search_I`]); 
+                
+                if (isSilent) {
+                    restoreExpandedStates('search-results', expandedStates);
+                } else if (!targetStopName) {
+                    restoreExpandedStates('search-results', [`search_O`, `search_I`]); 
+                }
+
+                if (targetStopName) {
+                    setTimeout(() => {
+                        const targetEl = resultsEl.querySelector('.highlight-stop');
+                        if (targetEl) {
+                            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 100);
+                }
             }
 
         } catch (error) {
@@ -1027,16 +1152,20 @@
         let bookmarkItems = keys.map(name => {
             const ids = bms[name];
             let minDist = Infinity;
-            if (lastGpsCoords && sortMode === 'distance') {
-                ids.forEach(id => {
-                    const stopData = globalStopsMap.get(id);
-                    if (stopData) {
+            let poles = [];
+            
+            ids.forEach(id => {
+                const stopData = globalStopsMap.get(id);
+                if (stopData) {
+                    poles.push(stopData);
+                    if (lastGpsCoords && sortMode === 'distance') {
                         const dist = getDistance(lastGpsCoords.lat, lastGpsCoords.lon, parseFloat(stopData.lat), parseFloat(stopData.long));
                         if (dist < minDist) minDist = dist;
                     }
-                });
-            }
-            return { name, ids, minDist };
+                }
+            });
+
+            return { name, ids, minDist, poles };
         });
 
         if (sortMode === 'distance' && lastGpsCoords) {
@@ -1075,7 +1204,7 @@
             
             let distBadge = '';
             if (sortMode === 'distance' && bm.minDist !== Infinity) {
-                distBadge = `<span style="font-size: 12px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 6px; border-radius: 12px; margin-right: 8px;">約 ${formatDistance(bm.minDist)}</span>`;
+                distBadge = `<span style="font-size: 12px; font-weight: normal; background: var(--dist-badge-bg); padding: 2px 6px; border-radius: 12px;">約 ${formatDistance(bm.minDist)}</span>`;
             }
 
             const routeListStr = sortedRouteGroups.map(rg => rg.route).join(',');
@@ -1087,8 +1216,9 @@
                             <span class="toggle-icon">▼</span>
                             <span>🚏 ${bm.name}</span>
                         </div>
-                        <div style="display: flex; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
                             ${distBadge}
+                            ${getMapNavHTML(bm.poles)}
                             <div onclick="event.stopPropagation()">${getStarHTML(bm.name, bm.ids)}</div>
                         </div>
                     </h3>
@@ -1103,10 +1233,14 @@
                     const etasHtml = rg.etas.slice(0, 3).map(e => `
                         <div class="eta-item"><span class="eta-time-text ${getETAClass(e.time)}">${formatETA(e.time)}</span><span class="eta-remark">${e.remark || ''}</span></div>
                     `).join('');
+                    
+                    const safeBmName = bm.name.replace(/'/g, "\\'");
                     htmlOutput += `
                         <div class="card">
                             <div class="route-info">
-                                <div class="route-number">${rg.route}</div>
+                                <div class="route-number clickable" onclick="jumpToRouteSearch('${rg.route}', '${safeBmName}')" title="點擊查看 ${rg.route} 完整路線">
+                                    ${rg.route} <span style="font-size: 14px;">🔍</span>
+                                </div>
                                 <div class="destination">往: ${rg.destination}</div>
                             </div>
                             <div class="eta-times-container">${etasHtml}</div>
@@ -1140,7 +1274,7 @@
         toggleAutoRefresh();
         updateGpsPrompt(); 
         
-        // 新增：頁面載入後自動定位並搜尋附近 300 米的巴士站
+        // 載入即自動定位附近車站
         findNearbyStops();
     });
 </script>
