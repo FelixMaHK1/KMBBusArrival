@@ -231,15 +231,18 @@
             max-height: 60vh;
             overflow-y: auto;
             padding-right: 4px;
+            position: relative;
         }
 
         .scrollable-area::-webkit-scrollbar { width: 6px; }
         .scrollable-area::-webkit-scrollbar-track { background: var(--background); border-radius: 4px; }
         .scrollable-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-        .direction-group { margin-bottom: 24px; }
+        .direction-group { 
+            margin-bottom: 24px; 
+            position: relative;
+        }
         
-        /* 升級：現代膠囊型 Hover 效果 (無下劃線) */
         .dist-badge {
             font-size: 12px;
             font-weight: normal;
@@ -253,6 +256,7 @@
             line-height: 1.2;
         }
 
+        /* 重構 Sticky Header，防止滾動遮擋 */
         .direction-header {
             background: var(--primary);
             color: white;
@@ -262,7 +266,7 @@
             font-size: 15px;
             position: sticky;
             top: 0; 
-            z-index: 10;
+            z-index: 20;
             box-shadow: var(--shadow);
             display: flex;
             justify-content: space-between;
@@ -297,6 +301,21 @@
             background: rgba(239, 83, 80, 0.15);
         }
 
+        /* 📍 當前車站 Badge 修復，防止爆邊換行 */
+        .current-stop-badge {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 6px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            vertical-align: middle;
+            font-weight: normal;
+        }
+
         .route-info { display: flex; flex-direction: column; gap: 4px; flex: 1; align-items: flex-start; }
         .route-number { font-size: 18px; font-weight: bold; color: var(--primary); }
         
@@ -316,7 +335,15 @@
             transform: translateY(-1px);
         }
         
-        .stop-name { font-size: 14px; font-weight: bold; color: var(--text-primary); }
+        .stop-name { 
+            font-size: 14px; 
+            font-weight: bold; 
+            color: var(--text-primary); 
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
         .destination { font-size: 13px; font-weight: 500; }
 
         .action-link-btn {
@@ -1070,8 +1097,8 @@
                             <div class="card ${isTargetStop ? 'highlight-stop' : ''}">
                                 <div class="route-info">
                                     <div class="stop-name" style="margin-bottom: 4px;">
-                                        ${seq}. ${stopInfo.stopName}
-                                        ${isTargetStop ? '<span style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 6px;">📍 當前車站</span>' : ''}
+                                        <span>${seq}. ${stopInfo.stopName}</span>
+                                        ${isTargetStop ? '<span class="current-stop-badge">📍 當前車站</span>' : ''}
                                     </div>
                                     <div style="display: flex; gap: 6px; align-items: center;" onclick="event.stopPropagation()">
                                         ${getMapNavHTML(allPoles)}
